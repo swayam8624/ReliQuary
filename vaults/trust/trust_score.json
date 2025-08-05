@@ -1,0 +1,9 @@
+{
+  "vault_id": "uuid",
+  "user_did": "did:reliquary:string",
+  "score": 85,
+  "last_evaluated": "datetime",
+  "evaluation_log": [
+    "string"
+  ]
+}

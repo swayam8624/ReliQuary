@@ -1,0 +1,5 @@
+high_security:
+  threshold: 95
+  rules:
+    - type: "deny_on_unfamiliar_ip"
+      action: "deny"

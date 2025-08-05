@@ -1,0 +1,9 @@
+{
+  "metadata": {
+    "vault_id": "uuid",
+    "owner_did": "did:reliquary:string",
+    "created_at": "datetime",
+    "last_modified": "datetime"
+  },
+  "data": "base64_encoded_encrypted_bytes"
+}

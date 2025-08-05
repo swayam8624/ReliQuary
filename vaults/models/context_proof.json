@@ -1,0 +1,6 @@
+{
+  "ip_proof_id": "string",
+  "device_proof_id": "string",
+  "timestamp_proof_id": "string",
+  "did_signature": "string"
+}

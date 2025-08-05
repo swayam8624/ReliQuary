@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ../.
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app # Mount the current directory into the container for development
+    environment:
+      # Add environment variables here (e.g., database connection strings, API keys)
+      # For production, use Docker secrets or Kubernetes secrets
+      - RELIQUARY_ENV=development
+    command: uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
+    # Add healthcheck for production readiness
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"] # Example health endpoint
+      interval: 30s
+      timeout: 10s
+      retries: 5

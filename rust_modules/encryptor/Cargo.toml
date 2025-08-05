@@ -1,0 +1,33 @@
+[package]
+name = "reliquary_encryptor"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "reliquary_encryptor"
+crate-type = ["cdylib"]      # Required for Python FFI
+
+[dependencies]
+pyo3 = { version = "0.25.1", features = ["extension-module"] }
+# Add actual PQC and AES-GCM dependencies here
+# For Kyber and Falcon, you'd typically use specific crates or bind to C implementations.
+# Example placeholders (you'll replace with actual, secure implementations):
+aes-gcm = "0.10.3"                                 # For AES-GCM
+sha2 = "0.10.9"
+rand_core = { version = "0.9.3", optional = true }
+rand = "0.8"                                       # For random number generation
+generic-array = "0.14.7"
+# You'll need specific crates for Kyber and Falcon, e.g., from pqcrypto-traits or similar
+typenum = "1.18.0"
+# For demonstration, we'll keep it minimal.
+
+
+[dependencies.getrandom]
+version = "0.2"
+optional = true
+
+[features]
+default = ["rand_core", "getrandom"]
+
+[package.metadata.pyo3]
+name = "reliquary_encryptor"

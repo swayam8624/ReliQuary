@@ -1,0 +1,16 @@
+[package]
+name = "reliquary_merkle"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "reliquary_merkle"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.25.1", features = ["extension-module"] }
+sha2 = "0.10.8"
+rand = "0.8.5"  # Use rand instead of rand_core unless you have a VERY specific reason
+
+[package.metadata.pyo3]
+name = "reliquary_merkle"

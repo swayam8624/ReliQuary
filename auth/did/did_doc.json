@@ -1,0 +1,20 @@
+{
+  "@context": "https://www.w3.org/ns/did/v1",
+  "id": "did:reliquary:<username-or-uuid>",
+  "verificationMethod": [
+    {
+      "id": "did:reliquary:testuser#key-1",
+      "type": "JsonWebKey2020",
+      "controller": "did:reliquary:testuser",
+      "publicKeyJwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "Jh6c_OctnHuMj1Q-TkY5Uc_2pY3wcHVZsxac7ix7O18",
+        "y": "o_tgCdjGOR4e45KQq1BrtobwFQ4EQhRhJnajx6j1pqQ"
+      }
+    }
+  ],
+  "authentication": [
+    "did:reliquary:testuser#key-1"
+  ]
+}

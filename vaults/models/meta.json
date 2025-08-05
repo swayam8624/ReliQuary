@@ -1,0 +1,14 @@
+{
+  "vault_id": "uuid",
+  "owner_did": "did:reliquary:string",
+  "created_at": "datetime",
+  "last_modified": "datetime",
+  "trust_config_id": "string",
+  "crypto_info": {
+    "key_shares": [
+      "hex_string"
+    ],
+    "nonce": "hex_string",
+    "tag": "hex_string"
+  }
+}

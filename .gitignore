@@ -1,0 +1,86 @@
+# .gitignore
+
+# -----------------------------------------------------------------------------
+# General Python
+# -----------------------------------------------------------------------------
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.whl
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Virtual environment
+.venv/
+env/
+venv/
+reliquary-env/  # Your Conda environment directory
+# Note: For collaborative projects, it's often better to include poetry.lock to ensure everyone uses the exact same dependencies.
+
+# IDEs and Editors
+.vscode/        # VSCode
+.idea/          # IntelliJ / PyCharm
+*.sublime-project
+*.sublime-workspace
+.DS_Store       # macOS-specific
+*.bak
+*.swp
+
+# -----------------------------------------------------------------------------
+# Rust
+# -----------------------------------------------------------------------------
+# Cargo build directory
+target/
+
+# Generated crates.io files
+Cargo.lock
+
+# -----------------------------------------------------------------------------
+# Node.js
+# -----------------------------------------------------------------------------
+# Node.js modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+
+# -----------------------------------------------------------------------------
+# Project-Specific Files
+# -----------------------------------------------------------------------------
+# Temporary configuration and data files
+config/trust_defaults.json
+config/vault_trust_templates.yaml
+config/vaults/
+config/api_config.py # This should be read from env vars, not committed
+
+# Secret files
+*.env
+.env.*
+.secrets/
+
+# WebAuthn database
+auth/webauthn/keys.db
+
+# Merkle-logged audit trail and test data
+audit_logs/
+vaults/test_data/
+vaults/data/
+test_logs/
+
+# ZK-SNARKs temporary files
+# These files are often large and should not be in git
+zk/proofs/
+zk/verifier/groth16.json

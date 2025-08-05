@@ -1,0 +1,52 @@
+[tool.poetry]
+name = "reliquary"
+version = "0.1.0"
+description = "Context-Bound, Trust-Evolved Cryptographic Memory System"
+authors = ["Swayam Singal <swayam.singal@gmail.com>"]
+
+packages = [
+    { include = "apps/api" },
+    { include = "agents" },
+    { include = "auth" },
+    { include = "config_package" }, # THIS IS THE CRUCIAL LINE
+    { include = "core" },
+    { include = "vaults" },
+    { include = "sdk" },
+    { include = "zk" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.116.1"
+uvicorn = { extras = ["standard"], version = "^0.35.0" }
+pydantic = "^2.7.4"
+langchain = "^0.3.27"                                           # For LangGraph
+langgraph = "^0.6.2"
+python-multipart = "^0.0.20"                                    # For form data handling in FastAPI
+python-jose = { extras = ["cryptography"], version = "^3.3.0" } # For JWT
+passlib = { extras = ["bcrypt"], version = "^1.7.4" }           # For password hashing
+requests = "^2.32.3"                                            # For basic HTTP requests
+httpx = "^0.28.1"                                               # For async HTTP requests
+# Add other dependencies as needed for specific modules (e.g., for WebAuthn, ZK, DB)
+# For Rust FFI with PyO3, you'll need to build the Rust modules
+# For ZK-SNARKs, you'll need SnarkJS (Node.js dependency) and potentially specific Python libraries if you use a Python ZK framework.
+# For database, add relevant driver (e.g., psycopg2-binary for PostgreSQL, sqlalchemy)
+# For S3, add boto3
+# For IPFS/Arweave, add relevant client libraries
+sss = "^1.2"
+ssss = "^1.0.0"
+shamir-sss = { git = "https://git.sr.ht/~fluix/sss", optional = true }
+fido2 = "^2.0.0"
+cbor2 = "^5.6.5"
+pyyaml = "^6.0.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
+black = "^25.1.0"
+isort = "^6.0.1"
+flake8 = "^7.1.0"
+mypy = "^1.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
