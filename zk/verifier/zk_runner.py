@@ -50,52 +50,43 @@ def run_zk_workflow(circuit_path: Path, input_path: Path):
         ["circom", str(circuit_path), "--wasm", "--r1cs", "-o", str(build_dir)]
     )
 
-    # --- FIX: Replace 'groth16 setup' with a more robust, multi-step process ---
-    ptau_path = verifier_dir / "pot12_final.ptau"
+    # --- Use the direct groth16 setup command correctly ---
+    ptau_path = verifier_dir / "pot12_phase2.ptau"
     if not ptau_path.exists():
-        print("❌ Powers of Tau file not found!", file=sys.stderr)
-        print(f"Please download a Powers of Tau file (e.g., pot12_final.ptau)", file=sys.stderr)
+        print("❌ Phase 2 Powers of Tau file not found!", file=sys.stderr)
+        print(f"Please run: snarkjs pt2 pot12_final.ptau pot12_phase2.ptau", file=sys.stderr)
         print(f"And place it in the '{verifier_dir}' directory.", file=sys.stderr)
         raise FileNotFoundError(f"{ptau_path} not found.")
     
     r1cs_path = build_dir / f"{circuit_name}.r1cs"
-    zkey_initial_path = verifier_dir / "zkey_initial.zkey"
-    zkey_final_path = verifier_dir / "zkey_final.zkey"
+    zkey_final = verifier_dir / "circuit_final.zkey"
     vkey_path = verifier_dir / "verification_key.json"
     
-    print("\n--- Step 2: Generating Initial ZKey ---")
-    # The 'zkey new' command creates the initial zkey from the r1cs and ptau files.
-    run_command(["snarkjs", "zkey", "new", str(r1cs_path), str(ptau_path), str(zkey_initial_path)], cwd=str(verifier_dir))
+    print("\n--- Step 2: Setting up Groth16 ZKey ---")
+    # Use groth16 setup directly (as per snarkjs help output)
+    run_command(["snarkjs", "groth16", "setup", str(r1cs_path), str(ptau_path), str(zkey_final)], cwd=str(verifier_dir))
     
-    print("\n--- Step 3: Contributing Dummy Entropy (Phase 2) ---")
-    # For testing, we contribute some dummy entropy non-interactively.
-    # The text "dummy entropy" is arbitrary.
-    run_command(
-        ["snarkjs", "zkey", "contribute", str(zkey_initial_path), str(zkey_final_path), "-e", "some random text"],
-        cwd=str(verifier_dir)
-    )
-
-    print("\n--- Step 4: Exporting Verification Key ---")
-    # Export the verification key from the *final* zkey.
-    run_command(["snarkjs", "zkey", "export", "verificationkey", str(zkey_final_path), str(vkey_path)], cwd=str(verifier_dir))
+    print("\n--- Step 3: Exporting Verification Key ---")
+    # Export the verification key using the new command format
+    run_command(["snarkjs", "zkey", "export", "verificationkey", str(zkey_final), str(vkey_path)], cwd=str(verifier_dir))
     print("✅ ZKey and Verification Key generated.")
-    # --- END FIX ---
+    # --- END CORRECT APPROACH ---
 
-    # Step 5: Generate the witness
-    print("\n--- Step 5: Generating Witness ---")
+    # Step 4: Generate the witness
+    print("\n--- Step 4: Generating Witness ---")
     wasm_path = build_dir / f"{circuit_name}_js" / f"{circuit_name}.wasm"
     wtns_path = build_dir / "witness.wtns"
     run_command(["snarkjs", "wtns", "calculate", str(wasm_path), str(input_path), str(wtns_path)], cwd=str(verifier_dir))
     
-    # Step 6: Generate the proof
-    print("\n--- Step 6: Generating Proof ---")
+    # Step 5: Generate the proof
+    print("\n--- Step 5: Generating Proof ---")
     proof_path = verifier_dir / "proof.json"
     public_path = verifier_dir / "public.json"
     # Use the final zkey to generate the proof
-    run_command(["snarkjs", "groth16", "prove", str(zkey_final_path), str(wtns_path), str(proof_path), str(public_path)], cwd=str(verifier_dir))
+    run_command(["snarkjs", "groth16", "prove", str(zkey_final), str(wtns_path), str(proof_path), str(public_path)], cwd=str(verifier_dir))
     
-    # Step 7: Verify the proof
-    print("\n--- Step 7: Verifying Proof ---")
+    # Step 6: Verify the proof
+    print("\n--- Step 6: Verifying Proof ---")
     run_command(["snarkjs", "groth16", "verify", str(vkey_path), str(public_path), str(proof_path)], cwd=str(verifier_dir))
 
 if __name__ == "__main__":

@@ -1,0 +1,17 @@
+{
+  "action_sequence": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+  "timing_intervals": ["100", "150", "120", "110", "140", "130", "125", "135", "115"],
+  "session_duration": "1800",
+  "keystrokes_per_minute": "60",
+  "mouse_movements": "150",
+  "access_frequency": "5",
+  "pattern_salt": "77777777777777777777",
+  "expected_pattern_hash": "88888888888888888888",
+  "min_session_duration": "300",
+  "max_session_duration": "7200",
+  "typing_speed_min": "30",
+  "typing_speed_max": "120",
+  "max_timing_variance": "50",
+  "risk_threshold": "30",
+  "pattern_confidence_level": "85"
+}

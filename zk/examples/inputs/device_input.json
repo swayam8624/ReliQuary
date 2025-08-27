@@ -1,0 +1,11 @@
+{
+  "device_fingerprint": "12345678901234567890",
+  "device_salt": "98765432109876543210",
+  "hsm_signature": "13579246801357924680",
+  "hsm_private_key": "24681357902468135790",
+  "expected_device_hash": "11223344556677889900",
+  "hsm_public_key": "99887766554433221100",
+  "device_whitelist_root": "11223344556677889900",
+  "blacklist_root": "99999999999999999999",
+  "challenge_nonce": "19283746501928374650"
+}

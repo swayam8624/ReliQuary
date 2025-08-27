@@ -1,0 +1,31 @@
+{
+  "user_id": "new_user_001",
+  "baseline_trust_score": 79.5,
+  "trust_history": [
+    79.5
+  ],
+  "behavioral_baselines": {
+    "known_devices": [
+      "ef81c00b85e5e09ff50555528307e4a1cc8603cd98ba1c6823f4989e0bf51a92"
+    ],
+    "known_locations": [
+      [
+        37.7749,
+        -122.4194
+      ]
+    ],
+    "typical_access_intervals": [
+      3600
+    ],
+    "typical_session_durations": [
+      1800
+    ],
+    "typical_typing_speed": [
+      65
+    ]
+  },
+  "risk_events": [],
+  "last_evaluation": 1756309033,
+  "total_evaluations": 1,
+  "compliance_violations": 0
+}

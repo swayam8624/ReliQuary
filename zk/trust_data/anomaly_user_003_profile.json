@@ -1,0 +1,67 @@
+{
+  "user_id": "anomaly_user_003",
+  "baseline_trust_score": 77.21146372509754,
+  "trust_history": [
+    77.5,
+    95.7625,
+    90.71959375,
+    71.6332775242625,
+    86.4297851835813,
+    85.51770674173783,
+    32.91738287610122
+  ],
+  "behavioral_baselines": {
+    "known_devices": [
+      "9316f7e96e5a9db53186f52ae84ac115ff042fc42d60a799e998191b30249d93",
+      "d62d824b66ffb36681cdb2fca368bf6b99ab403738874738584be40026937448"
+    ],
+    "known_locations": [
+      [
+        51.5074,
+        -0.1278
+      ],
+      [
+        -33.8688,
+        151.2093
+      ]
+    ],
+    "typical_access_intervals": [
+      86400,
+      86400,
+      3600,
+      86400,
+      7200,
+      30,
+      86400
+    ],
+    "typical_session_durations": [
+      900,
+      900,
+      900,
+      900,
+      900,
+      900,
+      900
+    ],
+    "typical_typing_speed": [
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55
+    ]
+  },
+  "risk_events": [
+    {
+      "timestamp": 1756309033,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 32.91738287610122,
+      "session_id": "anomaly_multiple_failures"
+    }
+  ],
+  "last_evaluation": 1756309033,
+  "total_evaluations": 7,
+  "compliance_violations": 0
+}

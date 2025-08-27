@@ -1,0 +1,6 @@
+{
+  "device_fingerprint": "12345",
+  "device_signature": "24690",
+  "expected_fingerprint": "12345",
+  "challenge_nonce": "12345"
+}

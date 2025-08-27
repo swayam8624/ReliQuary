@@ -1,0 +1,19 @@
+{
+  "current_latitude": "3777",
+  "current_longitude": "-12242",
+  "previous_latitude": "3775",
+  "previous_longitude": "-12240",
+  "ip_location_lat": "3776",
+  "ip_location_lon": "-12241",
+  "location_salt": "55555555555555555555",
+  "travel_time_hours": "2",
+  "authorized_region_center_lat": "3775",
+  "authorized_region_center_lon": "-12240",
+  "authorized_radius_squared": "100",
+  "blacklist_region_lat": "4000",
+  "blacklist_region_lon": "-10000",
+  "blacklist_radius_squared": "10000",
+  "max_travel_speed": "100",
+  "ip_tolerance_radius_squared": "25",
+  "require_ip_consistency": "1"
+}

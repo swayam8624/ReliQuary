@@ -1,0 +1,31 @@
+{
+  "user_id": "convenience_user",
+  "baseline_trust_score": 79.5,
+  "trust_history": [
+    79.5
+  ],
+  "behavioral_baselines": {
+    "known_devices": [
+      "d27b633e123ac25407beba53d6a369a7060c18ec102fa1eaba0b6136d164e719"
+    ],
+    "known_locations": [
+      [
+        34.0522,
+        -118.2437
+      ]
+    ],
+    "typical_access_intervals": [
+      1800
+    ],
+    "typical_session_durations": [
+      2100
+    ],
+    "typical_typing_speed": [
+      58
+    ]
+  },
+  "risk_events": [],
+  "last_evaluation": 1756309033,
+  "total_evaluations": 1,
+  "compliance_violations": 0
+}

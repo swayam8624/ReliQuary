@@ -1,0 +1,67 @@
+{
+  "user_id": "high_trust_user",
+  "baseline_trust_score": 95.96389445587546,
+  "trust_history": [
+    79.5,
+    97.8325,
+    97.10331875,
+    97.20175121875,
+    97.55151796004415,
+    97.81944254603678,
+    97.99601156222059,
+    98.12257196781525,
+    98.21830598018683,
+    98.29352457370098
+  ],
+  "behavioral_baselines": {
+    "known_devices": [
+      "9c12b7e69e65c30ed334d0eb79637fffdde101dee05682f221f16809bd76e394"
+    ],
+    "known_locations": [
+      [
+        47.6062,
+        -122.3321
+      ]
+    ],
+    "typical_access_intervals": [
+      3600,
+      3600,
+      3600,
+      3600,
+      3600,
+      3600,
+      3600,
+      3600,
+      3600,
+      3600
+    ],
+    "typical_session_durations": [
+      1500,
+      1500,
+      1500,
+      1500,
+      1500,
+      1500,
+      1500,
+      1500,
+      1500,
+      1500
+    ],
+    "typical_typing_speed": [
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80
+    ]
+  },
+  "risk_events": [],
+  "last_evaluation": 1756309033,
+  "total_evaluations": 10,
+  "compliance_violations": 0
+}

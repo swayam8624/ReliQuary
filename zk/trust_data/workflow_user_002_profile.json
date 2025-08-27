@@ -1,0 +1,28 @@
+{
+  "user_id": "workflow_user_002",
+  "baseline_trust_score": 85.708367359375,
+  "trust_history": [
+    79.5,
+    88.8325,
+    88.792602078125
+  ],
+  "behavioral_baselines": {
+    "known_devices": [
+      "c2c8a7979ab267ff643551b5cf89caf01b9de1d59b57f45aa02d04ca90fb8779"
+    ],
+    "typical_session_durations": [
+      1800,
+      1800,
+      1800
+    ],
+    "typical_typing_speed": [
+      65,
+      65,
+      65
+    ]
+  },
+  "risk_events": [],
+  "last_evaluation": 1756310037,
+  "total_evaluations": 3,
+  "compliance_violations": 0
+}

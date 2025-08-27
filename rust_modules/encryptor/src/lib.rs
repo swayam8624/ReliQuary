@@ -3,8 +3,25 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use generic_array::{typenum::U32, GenericArray};
+use hex;
+use pqcrypto_falcon::falcon1024 as falcon;
+use pqcrypto_kyber::kyber1024 as kyber;
+use pqcrypto_traits::kem::{
+    Ciphertext as KemCiphertext, PublicKey as KemPublicKey, SecretKey as KemSecretKey, SharedSecret,
+};
+use pqcrypto_traits::sign::{
+    DetachedSignature, PublicKey as SigPublicKey, SecretKey as SigSecretKey, SignedMessage,
+};
 use pyo3::prelude::*;
 use pyo3::Bound;
+// Kyber-1024 constants
+const KYBER_PUBLICKEYBYTES: usize = 1568;
+const KYBER_SECRETKEYBYTES: usize = 3168;
+const KYBER_CIPHERTEXTBYTES: usize = 1568;
+
+// Falcon-1024 constants
+const FALCON_PUBLICKEYBYTES: usize = 1793;
+const FALCON_SECRETKEYBYTES: usize = 2305;
 
 /// Python module for Reliquary encryption primitives
 #[pymodule]
@@ -110,38 +127,110 @@ fn decrypt_data_with_nonce(
     decrypt_data(&ciphertext_with_tag, &nonce_bytes, &key_bytes)
 }
 
-/// Placeholder Kyber public/private keypair generation
+/// Generate Kyber-1024 public/private keypair for post-quantum key encapsulation
 #[pyfunction]
 fn generate_kyber_keys() -> PyResult<(Vec<u8>, Vec<u8>)> {
-    Ok((vec![1u8; 32], vec![2u8; 32]))
+    let (pk, sk) = kyber::keypair();
+    Ok((pk.as_bytes().to_vec(), sk.as_bytes().to_vec()))
 }
 
-/// Placeholder Kyber encapsulation
+/// Kyber-1024 encapsulation - generate shared secret and ciphertext
 #[pyfunction]
-fn encapsulate_kyber(_pk: Vec<u8>) -> PyResult<(Vec<u8>, Vec<u8>)> {
-    Ok((vec![3u8; 32], vec![4u8; 32]))
+fn encapsulate_kyber(pk_bytes: Vec<u8>) -> PyResult<(Vec<u8>, Vec<u8>)> {
+    if pk_bytes.len() != KYBER_PUBLICKEYBYTES {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Invalid public key length. Expected {}, got {}",
+            KYBER_PUBLICKEYBYTES,
+            pk_bytes.len()
+        )));
+    }
+
+    let pk = kyber::PublicKey::from_bytes(&pk_bytes).map_err(|e| {
+        pyo3::exceptions::PyValueError::new_err(format!("Invalid public key: {:?}", e))
+    })?;
+
+    let (ss, ct) = kyber::encapsulate(&pk);
+    Ok((ss.as_bytes().to_vec(), ct.as_bytes().to_vec()))
 }
 
-/// Placeholder Kyber decapsulation
+/// Kyber-1024 decapsulation - recover shared secret from ciphertext
 #[pyfunction]
-fn decapsulate_kyber(_ct: Vec<u8>, _sk: Vec<u8>) -> PyResult<Vec<u8>> {
-    Ok(vec![5u8; 32])
+fn decapsulate_kyber(ct_bytes: Vec<u8>, sk_bytes: Vec<u8>) -> PyResult<Vec<u8>> {
+    if ct_bytes.len() != KYBER_CIPHERTEXTBYTES {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Invalid ciphertext length. Expected {}, got {}",
+            KYBER_CIPHERTEXTBYTES,
+            ct_bytes.len()
+        )));
+    }
+
+    if sk_bytes.len() != KYBER_SECRETKEYBYTES {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Invalid secret key length. Expected {}, got {}",
+            KYBER_SECRETKEYBYTES,
+            sk_bytes.len()
+        )));
+    }
+
+    let ct = kyber::Ciphertext::from_bytes(&ct_bytes).map_err(|e| {
+        pyo3::exceptions::PyValueError::new_err(format!("Invalid ciphertext: {:?}", e))
+    })?;
+
+    let sk = kyber::SecretKey::from_bytes(&sk_bytes).map_err(|e| {
+        pyo3::exceptions::PyValueError::new_err(format!("Invalid secret key: {:?}", e))
+    })?;
+
+    let ss = kyber::decapsulate(&ct, &sk);
+    Ok(ss.as_bytes().to_vec())
 }
 
-/// Placeholder Falcon keypair
+/// Generate Falcon-1024 public/private keypair for post-quantum digital signatures
 #[pyfunction]
 fn generate_falcon_keys() -> PyResult<(Vec<u8>, Vec<u8>)> {
-    Ok((vec![6u8; 32], vec![7u8; 32]))
+    let (pk, sk) = falcon::keypair();
+    Ok((pk.as_bytes().to_vec(), sk.as_bytes().to_vec()))
 }
 
-/// Placeholder Falcon signature
+/// Falcon-1024 signature generation
 #[pyfunction]
-fn sign_falcon(_msg: Vec<u8>, _sk: Vec<u8>) -> PyResult<Vec<u8>> {
-    Ok(vec![8u8; 64])
+fn sign_falcon(msg: Vec<u8>, sk_bytes: Vec<u8>) -> PyResult<Vec<u8>> {
+    if sk_bytes.len() != FALCON_SECRETKEYBYTES {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Invalid secret key length. Expected {}, got {}",
+            FALCON_SECRETKEYBYTES,
+            sk_bytes.len()
+        )));
+    }
+
+    let sk = falcon::SecretKey::from_bytes(&sk_bytes).map_err(|e| {
+        pyo3::exceptions::PyValueError::new_err(format!("Invalid secret key: {:?}", e))
+    })?;
+
+    let signed_msg = falcon::sign(&msg, &sk);
+    Ok(signed_msg.as_bytes().to_vec())
 }
 
-/// Placeholder Falcon verification
+/// Falcon-1024 signature verification
 #[pyfunction]
-fn verify_falcon(_msg: Vec<u8>, _sig: Vec<u8>, _pk: Vec<u8>) -> PyResult<bool> {
-    Ok(true)
+fn verify_falcon(msg: Vec<u8>, sig_bytes: Vec<u8>, pk_bytes: Vec<u8>) -> PyResult<bool> {
+    if pk_bytes.len() != FALCON_PUBLICKEYBYTES {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Invalid public key length. Expected {}, got {}",
+            FALCON_PUBLICKEYBYTES,
+            pk_bytes.len()
+        )));
+    }
+
+    let pk = falcon::PublicKey::from_bytes(&pk_bytes).map_err(|e| {
+        pyo3::exceptions::PyValueError::new_err(format!("Invalid public key: {:?}", e))
+    })?;
+
+    let signed_msg = falcon::SignedMessage::from_bytes(&sig_bytes).map_err(|e| {
+        pyo3::exceptions::PyValueError::new_err(format!("Invalid signature: {:?}", e))
+    })?;
+
+    match falcon::open(&signed_msg, &pk) {
+        Ok(recovered_msg) => Ok(recovered_msg == msg),
+        Err(_) => Ok(false),
+    }
 }

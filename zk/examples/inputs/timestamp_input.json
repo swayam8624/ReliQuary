@@ -1,0 +1,15 @@
+{
+  "current_timestamp": "1724782800",
+  "last_access_time": "1724779200",
+  "timezone_offset": "-28800",
+  "totp_secret": "12345678901234567890",
+  "min_allowed_time": "1724760000",
+  "max_allowed_time": "1724800000",
+  "min_interval": "300",
+  "business_hours_start": "28800",
+  "business_hours_end": "64800",
+  "totp_window": "30",
+  "expected_totp_hash": "98765432109876543210",
+  "require_business_hours": "1",
+  "require_totp": "1"
+}

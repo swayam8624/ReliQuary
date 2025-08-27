@@ -1,0 +1,4 @@
+{"event": "api_startup", "status": "success", "timestamp": "2025-08-27T21:10:45.000892Z", "version": "0.1.0"}
+{"event": "api_shutdown", "status": "success", "timestamp": "2025-08-27T21:10:45.005116Z"}
+{"event": "api_startup", "status": "success", "timestamp": "2025-08-27T21:11:22.440430Z", "version": "0.1.0"}
+{"event": "health_check", "status": "healthy", "timestamp": "2025-08-27T21:11:56.285133Z", "type": "detailed"}
