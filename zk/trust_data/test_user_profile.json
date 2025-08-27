@@ -1,0 +1,29 @@
+{
+  "user_id": "test_user",
+  "baseline_trust_score": 20.5,
+  "trust_history": [
+    20.5
+  ],
+  "behavioral_baselines": {
+    "known_devices": [
+      "806d2775060dffab7cce7547fb3f1df82c7f008b9021539931c4d04708b29234"
+    ],
+    "typical_session_durations": [
+      1800
+    ],
+    "typical_typing_speed": [
+      75
+    ]
+  },
+  "risk_events": [
+    {
+      "timestamp": 1756311432,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 20.5,
+      "session_id": null
+    }
+  ],
+  "last_evaluation": 1756311432,
+  "total_evaluations": 1,
+  "compliance_violations": 0
+}

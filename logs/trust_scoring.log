@@ -39,3 +39,4 @@
 {"confidence": 2.0, "event": "trust_evaluation", "processing_time": 0.00047087669372558594, "risk_level": "VERY_HIGH", "session_id": null, "timestamp": "2025-08-27T21:22:52.962400Z", "trust_score": 23.5925, "user_id": "edge_user"}
 {"confidence": 15.290444375000007, "event": "trust_evaluation", "processing_time": 0.0006890296936035156, "risk_level": "LOW", "session_id": null, "timestamp": "2025-08-27T21:23:57.158627Z", "trust_score": 88.792602078125, "user_id": "workflow_user_002"}
 {"confidence": 17.451144375, "event": "trust_evaluation", "processing_time": 0.0004930496215820312, "risk_level": "VERY_HIGH", "session_id": null, "timestamp": "2025-08-27T21:24:00.858423Z", "trust_score": 22.692954578125, "user_id": "edge_user"}
+{"confidence": 0.0, "event": "trust_evaluation", "processing_time": 0.0003590583801269531, "risk_level": "VERY_HIGH", "session_id": null, "timestamp": "2025-08-27T21:47:12.140175Z", "trust_score": 20.5, "user_id": "test_user"}
