@@ -6,7 +6,7 @@ This service provides encryption and decryption functionality via Rust FFI wrapp
 import json
 import logging
 import base64
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -368,3 +368,38 @@ def reconstruct_key_from_shards(shards: List[str], threshold: int = 2) -> str:
     """Convenience function to reconstruct a key from shards"""
     service = get_encryptor_service()
     return service.reconstruct_encryption_key(shards, threshold)
+
+
+# Alias for backward compatibility
+EncryptionService = EncryptorService
+
+# Dataclasses for requests
+@dataclass
+class EncryptionRequest:
+    """Request for encryption operation"""
+    data: str  # Base64 encoded
+    key: str   # Base64 encoded
+    algorithm: str = "aes-gcm"
+
+@dataclass
+class DecryptionRequest:
+    """Request for decryption operation"""
+    encrypted_data: str  # Base64 encoded
+    key: str            # Base64 encoded
+    nonce: str          # Base64 encoded
+    algorithm: str = "aes-gcm"
+
+@dataclass
+class EncryptionResponse:
+    """Response for encryption operation"""
+    encrypted_data: str  # Base64 encoded
+    nonce: str          # Base64 encoded
+    algorithm: str
+    timestamp: datetime
+
+@dataclass
+class DecryptionResponse:
+    """Response for decryption operation"""
+    decrypted_data: str  # Base64 encoded
+    algorithm: str
+    timestamp: datetime

@@ -83,3 +83,20 @@ def decrypt_with_provided_nonce(ciphertext: bytes, key: bytes, nonce: bytes, tag
     
     plaintext = decrypt_data_with_nonce_rust(ciphertext_with_tag, key, nonce) # Note: Rust decrypt_data_with_nonce takes (ciphertext_with_tag, key, nonce) order
     return plaintext
+
+
+def encrypt_aes_gcm(data: bytes, key: bytes) -> tuple[bytes, bytes, bytes]:
+    """
+    Encrypts data using AES-GCM-256 (alias for encrypt function).
+    Generates a unique nonce internally.
+    Returns (ciphertext, nonce, tag).
+    """
+    return encrypt(data, key)
+
+
+def decrypt_aes_gcm(ciphertext: bytes, nonce: bytes, tag: bytes, key: bytes) -> bytes:
+    """
+    Decrypts data using AES-GCM-256 (alias for decrypt function).
+    Takes (ciphertext, nonce, tag, key).
+    """
+    return decrypt(ciphertext, nonce, tag, key)

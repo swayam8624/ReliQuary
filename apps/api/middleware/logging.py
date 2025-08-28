@@ -109,3 +109,8 @@ def setup_api_logging(log_level: int = logging.INFO) -> logging.Logger:
         logger.addHandler(handler)
     
     return logger
+
+
+# Aliases for backward compatibility
+StructuredLoggingMiddleware = LoggingMiddleware
+RequestLoggingMiddleware = LoggingMiddleware

@@ -166,3 +166,8 @@ class VaultBackupResponse(BaseModel):
     backup_path: str = Field(..., description="Backup file path")
     backup_size: int = Field(..., description="Backup size in bytes")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Response timestamp")
+
+
+# Alias for backward compatibility
+VaultCreate = VaultCreateRequest
+VaultResponse = VaultCreateResponse

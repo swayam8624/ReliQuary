@@ -420,3 +420,83 @@ def remove_enforcement_rule(rule_id: str) -> bool:
     """Convenience function to remove an enforcement rule"""
     enforcer = get_rule_enforcer()
     return enforcer.remove_rule(rule_id)
+
+
+@dataclass
+class RuleEvaluationRequest:
+    """Request for rule evaluation"""
+    user_id: str
+    resource_path: str
+    action: str
+    trust_score: float
+    context_data: Dict[str, Any]
+    metadata: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class RuleEvaluationResponse:
+    """Response for rule evaluation"""
+    decision: str
+    rule_id: str
+    reason: str
+    action_parameters: Optional[Dict[str, Any]] = None
+    timestamp: datetime = None
+    
+    def __post_init__(self):
+        if self.timestamp is None:
+            self.timestamp = datetime.now()
+
+
+class RuleEnforcementService:
+    """Service for enforcing security rules based on trust scores and context"""
+    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        self.rule_enforcer = RuleEnforcer()
+    
+    def evaluate_rules(self, request: RuleEvaluationRequest) -> RuleEvaluationResponse:
+        """
+        Evaluate security rules based on the provided request.
+        
+        Args:
+            request: Rule evaluation request with context
+            
+        Returns:
+            Rule evaluation response with decision
+        """
+        # Convert RuleEvaluationRequest to EnforcementContext
+        context = EnforcementContext(
+            user_id=request.user_id,
+            resource_path=request.resource_path,
+            action=request.action,
+            trust_score=request.trust_score,
+            context_data=request.context_data,
+            metadata=request.metadata
+        )
+        
+        # Get result from rule enforcer
+        result = self.rule_enforcer.enforce_rules(context)
+        
+        # Convert EnforcementResult to RuleEvaluationResponse
+        response = RuleEvaluationResponse(
+            decision=result.decision.value,
+            rule_id=result.rule_id,
+            reason=result.reason,
+            action_parameters=result.action_parameters,
+            timestamp=result.timestamp
+        )
+        
+        return response
+    
+    def add_rule(self, rule: EnforcementRule) -> bool:
+        """Add a new enforcement rule."""
+        return self.rule_enforcer.add_rule(rule)
+    
+    def remove_rule(self, rule_id: str) -> bool:
+        """Remove an enforcement rule."""
+        return self.rule_enforcer.remove_rule(rule_id)
+    
+    def get_rules(self) -> List[EnforcementRule]:
+        """Get all enforcement rules."""
+        return self.rule_enforcer.get_rules()
+

@@ -183,6 +183,90 @@ class AgentOrchestrator:
         return True
 
 
+@dataclass
+class OrchestrationRequest:
+    """Request for agent orchestration"""
+    request_id: str
+    user_id: str
+    resource_path: str
+    context_data: Dict[str, Any]
+    priority: int = 5
+    timeout_seconds: int = 30
+    required_agents: Optional[List[str]] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class OrchestrationResponse:
+    """Response from agent orchestration"""
+    request_id: str
+    decision: str
+    confidence_score: float
+    participating_agents: List[str]
+    consensus_time_ms: float
+    detailed_votes: Dict[str, Any]
+    risk_assessment: Dict[str, Any]
+    timestamp: datetime
+    success: bool
+
+
+class AgentOrchestrationService:
+    """Service for orchestrating multi-agent consensus decisions"""
+    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        self.agent_orchestrator = AgentOrchestrator()
+    
+    async def process_orchestration_request(self, request: OrchestrationRequest) -> OrchestrationResponse:
+        """
+        Process an orchestration request using the agent orchestrator.
+        
+        Args:
+            request: Orchestration request
+            
+        Returns:
+            Orchestration response with consensus decision
+        """
+        # Convert OrchestrationRequest to AgentRequest
+        agent_request = AgentRequest(
+            request_id=request.request_id,
+            decision_type=DecisionType.ACCESS_REQUEST,
+            user_id=request.user_id,
+            resource_path=request.resource_path,
+            context_data=request.context_data,
+            priority=request.priority,
+            timeout_seconds=request.timeout_seconds,
+            required_agents=request.required_agents,
+            metadata=request.metadata
+        )
+        
+        # Get response from agent orchestrator
+        agent_response = await self.agent_orchestrator.request_consensus(agent_request)
+        
+        # Convert AgentResponse to OrchestrationResponse
+        orchestration_response = OrchestrationResponse(
+            request_id=agent_response.request_id,
+            decision=agent_response.decision,
+            confidence_score=agent_response.confidence_score,
+            participating_agents=agent_response.participating_agents,
+            consensus_time_ms=agent_response.consensus_time_ms,
+            detailed_votes=agent_response.detailed_votes,
+            risk_assessment=agent_response.risk_assessment,
+            timestamp=agent_response.timestamp,
+            success=agent_response.success
+        )
+        
+        return orchestration_response
+    
+    async def get_request_status(self, request_id: str) -> Dict[str, Any]:
+        """Get the status of an orchestration request."""
+        return await self.agent_orchestrator.get_consensus_status(request_id)
+    
+    async def cancel_request(self, request_id: str) -> bool:
+        """Cancel an orchestration request."""
+        return await self.agent_orchestrator.cancel_consensus(request_id)
+
+
 # Global agent orchestrator instance
 _agent_orchestrator = None
 

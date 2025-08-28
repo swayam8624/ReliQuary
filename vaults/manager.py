@@ -8,10 +8,10 @@ import traceback
 from typing import Optional
 
 # Local project imports
-# from vaults.vault import VaultMetadata, Vault  <- This would be the import path
-# from vaults.storage.base import StorageInterface
-# from core.crypto.aes_gcm import encrypt, decrypt
-# from core.crypto.key_sharding import create_shares, reconstruct_secret
+from vaults.vault import VaultMetadata, Vault
+from vaults.storage.base import StorageInterface
+from core.crypto.aes_gcm import encrypt, decrypt
+from core.crypto.key_sharding import create_shares, reconstruct_secret
 
 # Basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

@@ -62,3 +62,8 @@ if __name__ == "__main__":
     # Clean up the test directory
     os.rmdir(test_path)
     print("✅ LocalFileStorage test passed.")
+
+
+# Alias for backward compatibility
+LocalStorageBackend = LocalFileStorage
+LocalStorage = LocalFileStorage

@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 import secrets
+from typing import Tuple
 
 # Determine the correct library extension based on OS
 if sys.platform == "linux" or sys.platform == "linux2":
@@ -263,6 +264,43 @@ def verify_merkle_proof_rust(data_block: bytes, proof: list[bytes], root: bytes)
     """Verifies a Merkle proof."""
     rust_proof = [list(p) for p in proof]
     return merkle_module.verify_merkle_proof(list(data_block), rust_proof, list(root))
+
+# --- Backward Compatibility Functions ---
+
+def encrypt_data(data: bytes, key: bytes) -> Tuple[bytes, bytes]:
+    """Encrypts data using AES-GCM (backward compatibility function).
+    Returns (ciphertext_with_tag, nonce)."""
+    return encrypt_data_rust(data, key)
+
+def decrypt_data(encrypted_data: bytes, key: bytes, nonce: bytes) -> bytes:
+    """Decrypts data using AES-GCM (backward compatibility function)."""
+    return decrypt_data_rust(encrypted_data, nonce, key)
+
+def generate_keypair(algorithm: str = "kyber") -> Tuple[bytes, bytes]:
+    """Generate a keypair using the specified algorithm (backward compatibility function)."""
+    if algorithm.lower() == "kyber":
+        return generate_kyber_keys_rust()
+    elif algorithm.lower() == "falcon":
+        return generate_falcon_keys_rust()
+    else:
+        # Default to Kyber for unknown algorithms
+        return generate_kyber_keys_rust()
+
+def sign_message(message: bytes, private_key: bytes, algorithm: str = "falcon") -> bytes:
+    """Sign a message using the specified algorithm (backward compatibility function)."""
+    if algorithm.lower() == "falcon":
+        return sign_falcon_rust(message, private_key)
+    else:
+        # Default to Falcon for unknown algorithms
+        return sign_falcon_rust(message, private_key)
+
+def verify_signature(message: bytes, signature: bytes, public_key: bytes, algorithm: str = "falcon") -> bool:
+    """Verify a signature using the specified algorithm (backward compatibility function)."""
+    if algorithm.lower() == "falcon":
+        return verify_falcon_rust(message, signature, public_key)
+    else:
+        # Default to Falcon for unknown algorithms
+        return verify_falcon_rust(message, signature, public_key)
 
 # --- Utility Functions ---
 

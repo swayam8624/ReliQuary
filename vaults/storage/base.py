@@ -20,3 +20,12 @@ class StorageInterface(ABC):
     def delete_vault(self, vault_id: str):
         """Deletes a vault by its unique ID."""
         pass
+
+
+# Alias for backward compatibility
+StorageBackend = StorageInterface
+
+
+class StorageError(Exception):
+    """Base exception for storage-related errors"""
+    pass

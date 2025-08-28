@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional
 from enum import Enum
 from pydantic import BaseModel, Field
 from datetime import datetime
+from dataclasses import dataclass
 
 
 class VerificationLevel(str, Enum):
@@ -112,3 +113,15 @@ class BatchContextVerificationResponse(BaseModel):
     failed_verifications: int = Field(..., description="Number of failed verifications")
     processing_time: float = Field(..., description="Total processing time in seconds")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Response timestamp")
+
+
+@dataclass
+class ContextData:
+    """Context data for verification"""
+    user_id: str
+    ip_address: str
+    user_agent: str
+    timestamp: str
+    device_fingerprint: str
+    location_data: Optional[Dict[str, Any]] = None
+    access_patterns: Optional[List[str]] = None
