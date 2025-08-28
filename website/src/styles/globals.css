@@ -96,13 +96,13 @@ body {
   @apply border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300;
 }
 
-/* Card styles */
+/* Card styles - IMPROVED CONTRAST */
 .card {
-  @apply bg-white rounded-xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl hover:scale-105;
+  @apply bg-white rounded-xl shadow-lg border border-gray-200 p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
 }
 
 .card-dark {
-  @apply bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6 transition-all duration-300 hover:shadow-xl hover:scale-105;
+  @apply bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
 }
 
 /* Feature grid animations */
@@ -119,18 +119,18 @@ body {
   @apply bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto;
 }
 
-/* Pricing card styles */
+/* Pricing card styles - IMPROVED CONTRAST */
 .pricing-card {
-  @apply relative bg-white rounded-2xl shadow-lg border border-gray-200 p-8 transition-all duration-300 hover:shadow-2xl hover:scale-105;
+  @apply relative bg-white rounded-2xl shadow-xl border border-gray-300 p-8 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2;
 }
 
 .pricing-card.featured {
-  @apply border-primary-500 bg-gradient-to-br from-primary-50 to-white transform scale-105 shadow-2xl;
+  @apply border-primary-500 bg-gradient-to-br from-primary-50 to-white transform hover:-translate-y-3 shadow-2xl;
 }
 
 .pricing-card.featured::before {
   content: 'Most Popular';
-  @apply absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary-500 text-white px-4 py-1 rounded-full text-sm font-semibold;
+  @apply absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg;
 }
 
 /* Loading animations */
@@ -152,7 +152,7 @@ body {
 
 /* Hero section background */
 .hero-bg {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%);
   position: relative;
 }
 
@@ -164,8 +164,8 @@ body {
   right: 0;
   bottom: 0;
   background-image: 
-    radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(236, 72, 153, 0.2) 0%, transparent 50%);
   animation: float 6s ease-in-out infinite;
 }
 
@@ -174,9 +174,13 @@ body {
   50% { transform: translateY(-10px); }
 }
 
-/* Form styles */
+/* Form styles - FIXED INPUT VISIBILITY */
 .form-input {
-  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900;
+}
+
+.form-input::placeholder {
+  @apply text-gray-500;
 }
 
 .form-input:focus {
@@ -185,7 +189,7 @@ body {
 
 /* Navigation styles */
 .nav-link {
-  @apply text-gray-600 hover:text-primary-600 font-medium transition-colors duration-200 relative;
+  @apply text-gray-700 hover:text-primary-600 font-medium transition-colors duration-200 relative;
 }
 
 .nav-link::after {
@@ -246,4 +250,18 @@ body {
   .nav-link {
     @apply text-gray-300 hover:text-primary-400;
   }
+  
+  /* Dark mode form input fix */
+  .form-input {
+    @apply bg-gray-800 border-gray-600 text-white;
+  }
+  
+  .form-input::placeholder {
+    @apply text-gray-400;
+  }
+}
+
+/* Dark mode toggle styles */
+.dark-mode-toggle {
+  @apply p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors;
 }

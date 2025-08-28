@@ -3,9 +3,6 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   output: 'standalone',
-  experimental: {
-    appDir: true,
-  },
   images: {
     domains: ['reliquary.io', 'cdn.reliquary.io'],
     unoptimized: false,

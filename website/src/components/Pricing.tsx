@@ -9,7 +9,8 @@ import {
   SparklesIcon,
   BuildingOfficeIcon,
   CpuChipIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 
 const pricingTiers = [

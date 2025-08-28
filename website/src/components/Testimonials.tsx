@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeftIcon, 
   ChevronRightIcon,
-  StarIcon,
-  QuoteLeftIcon
+  StarIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
@@ -166,7 +165,9 @@ export default function Testimonials() {
           <div className="bg-white rounded-2xl shadow-xl p-8 lg:p-12">
             <div className="absolute -top-6 left-8">
               <div className="bg-primary-500 text-white p-4 rounded-full">
-                <QuoteLeftIcon className="h-8 w-8" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6.75 4.5a.75.75 0 0 0-.75.75v.75c0 3.75 2.25 6.75 6 6.75s6-3 6-6.75v-.75a.75.75 0 0 0-.75-.75h-10.5Zm0 9a.75.75 0 0 0-.75.75v.75c0 3.75 2.25 6.75 6 6.75s6-3 6-6.75v-.75a.75.75 0 0 0-.75-.75h-10.5Z" />
+                </svg>
               </div>
             </div>
 
@@ -199,69 +200,46 @@ export default function Testimonials() {
                       {testimonials[currentTestimonial].name}
                     </div>
                     <div className="text-gray-600">
-                      {testimonials[currentTestimonial].role}
-                    </div>
-                    <div className="text-primary-600 font-medium">
-                      {testimonials[currentTestimonial].company}
+                      {testimonials[currentTestimonial].role}, {testimonials[currentTestimonial].company}
                     </div>
                   </div>
                 </div>
 
                 {/* Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-gray-100">
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary-600">
-                      {testimonials[currentTestimonial].metrics.implementation}
-                    </div>
-                    <div className="text-sm text-gray-600">Implementation Time</div>
+                    <div className="text-lg font-bold text-gray-900">{testimonials[currentTestimonial].metrics.implementation}</div>
+                    <div className="text-sm text-gray-600">Implementation</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {testimonials[currentTestimonial].metrics.improvement}
-                    </div>
-                    <div className="text-sm text-gray-600">Performance Improvement</div>
+                    <div className="text-lg font-bold text-gray-900">{testimonials[currentTestimonial].metrics.improvement}</div>
+                    <div className="text-sm text-gray-600">Improvement</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-semibold text-blue-600">
-                      {testimonials[currentTestimonial].metrics.compliance}
-                    </div>
-                    <div className="text-sm text-gray-600">Compliance Achievement</div>
+                    <div className="text-lg font-bold text-gray-900">{testimonials[currentTestimonial].metrics.compliance}</div>
+                    <div className="text-sm text-gray-600">Compliance</div>
                   </div>
                 </div>
               </motion.div>
             </AnimatePresence>
+          </div>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between mt-8">
-              <button
-                onClick={prevTestimonial}
-                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                aria-label="Previous testimonial"
-              >
-                <ChevronLeftIcon className="h-6 w-6 text-gray-600" />
-              </button>
-
-              <div className="flex space-x-2">
-                {testimonials.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentTestimonial(index)}
-                    className={`w-3 h-3 rounded-full transition-colors ${
-                      index === currentTestimonial ? 'bg-primary-600' : 'bg-gray-300'
-                    }`}
-                    aria-label={`Go to testimonial ${index + 1}`}
-                  />
-                ))}
-              </div>
-
-              <button
-                onClick={nextTestimonial}
-                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                aria-label="Next testimonial"
-              >
-                <ChevronRightIcon className="h-6 w-6 text-gray-600" />
-              </button>
-            </div>
+          {/* Navigation */}
+          <div className="flex justify-center space-x-4 mt-8">
+            <button
+              onClick={prevTestimonial}
+              className="p-3 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 text-gray-600 hover:text-primary-600"
+              aria-label="Previous testimonial"
+            >
+              <ChevronLeftIcon className="h-6 w-6" />
+            </button>
+            <button
+              onClick={nextTestimonial}
+              className="p-3 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 text-gray-600 hover:text-primary-600"
+              aria-label="Next testimonial"
+            >
+              <ChevronRightIcon className="h-6 w-6" />
+            </button>
           </div>
         </motion.div>
 
@@ -272,55 +250,14 @@ export default function Testimonials() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="text-center"
         >
-          <h3 className="text-lg font-semibold text-gray-600 mb-8">
-            Trusted by leading organizations worldwide
-          </h3>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-8 items-center opacity-60">
+          <p className="text-gray-500 mb-8">Trusted by innovative companies worldwide</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-8 items-center">
             {companies.map((company, index) => (
-              <div key={index} className="flex items-center justify-center">
-                <div className="w-24 h-12 bg-gray-300 rounded-lg flex items-center justify-center">
-                  <span className="text-xs font-medium text-gray-600">
-                    {company.name}
-                  </span>
-                </div>
+              <div key={index} className="flex justify-center">
+                <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16" />
               </div>
             ))}
           </div>
-        </motion.div>
-
-        {/* Additional Testimonials Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16"
-        >
-          {testimonials.slice(0, 3).map((testimonial, index) => (
-            <div key={testimonial.id} className="card">
-              <div className="flex space-x-1 mb-4">
-                {renderStars(testimonial.rating)}
-              </div>
-              
-              <blockquote className="text-gray-600 mb-6">
-                "{testimonial.quote.substring(0, 120)}..."
-              </blockquote>
-              
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                  {testimonial.name.split(' ').map(n => n[0]).join('')}
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-900 text-sm">
-                    {testimonial.name}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {testimonial.role}, {testimonial.company}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
         </motion.div>
       </div>
     </section>

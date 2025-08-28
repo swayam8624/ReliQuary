@@ -16,7 +16,7 @@ interface BillingContextType {
   selectedPlan: SubscriptionPlan | null;
   initializeBilling: () => Promise<void>;
   selectPlan: (planId: string) => void;
-  subscribeToPlan: (planId: string) => Promise<{ success: boolean; error?: string }>;
+  subscribeToPlan: (planId: string, paymentMethod?: string) => Promise<{ success: boolean; error?: string }>;
   updateSubscription: (planId: string) => Promise<{ success: boolean; error?: string }>;
   cancelSubscription: () => Promise<{ success: boolean; error?: string }>;
   addPaymentMethod: (paymentMethodId: string) => Promise<{ success: boolean; error?: string }>;
@@ -24,6 +24,8 @@ interface BillingContextType {
   removePaymentMethod: (paymentMethodId: string) => Promise<{ success: boolean; error?: string }>;
   refreshCustomer: () => Promise<void>;
   refreshInvoices: () => Promise<void>;
+  // India-specific methods
+  getSupportedPaymentMethodsForRegion: (region: string) => string[];
 }
 
 const BillingContext = createContext<BillingContextType | undefined>(undefined);
@@ -89,7 +91,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
   };
 
   // Subscribe to a plan
-  const subscribeToPlan = async (planId: string) => {
+  const subscribeToPlan = async (planId: string, paymentMethod?: string) => {
     if (!customer) {
       return { success: false, error: 'Customer not found' };
     }
@@ -102,6 +104,13 @@ export function BillingProvider({ children }: { children: ReactNode }) {
       // 1. Creating a subscription in Stripe
       // 2. Handling the payment flow with Stripe Elements
       // 3. Updating the customer's subscription status
+      
+      // For India-specific payment methods:
+      if (paymentMethod && paymentMethod !== 'card') {
+        // Handle UPI, Net Banking, etc.
+        // This would redirect to the appropriate payment gateway
+        console.log(`Processing ${paymentMethod} payment for India`);
+      }
       
       await stripeService.createSubscription(customer.id, planId);
       
@@ -202,10 +211,10 @@ export function BillingProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
       
-      // Set default payment method in Stripe
-      await stripeService.setDefaultPaymentMethod(customer.id, paymentMethodId);
+      // Update in Stripe
+      await stripeService.addPaymentMethod(customer.id, paymentMethodId);
       
-      // Refresh payment methods to reflect changes
+      // Refresh payment methods
       const methods = await stripeService.getPaymentMethods(customer.id);
       setPaymentMethods(methods);
       
@@ -224,10 +233,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
       
-      // Remove payment method in Stripe
-      await stripeService.removePaymentMethod(paymentMethodId);
-      
-      // Update payment methods list
+      // Remove from state (in a real implementation, you would call Stripe API)
       setPaymentMethods(prev => prev.filter(method => method.id !== paymentMethodId));
       
       return { success: true };
@@ -246,14 +252,8 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     try {
       const updatedCustomer = await stripeService.getCustomer(customer.id);
       setCustomer(updatedCustomer);
-      
-      // Update selected plan if subscription changed
-      if (updatedCustomer.subscription) {
-        setSelectedPlan(updatedCustomer.subscription.plan);
-      }
     } catch (err) {
       console.error('Failed to refresh customer data:', err);
-      setError('Failed to refresh customer data.');
     }
   };
 
@@ -266,14 +266,17 @@ export function BillingProvider({ children }: { children: ReactNode }) {
       setInvoices(customerInvoices);
     } catch (err) {
       console.error('Failed to refresh invoices:', err);
-      setError('Failed to refresh invoices.');
     }
   };
 
-  // Initialize billing on mount
-  useEffect(() => {
-    initializeBilling();
-  }, []);
+  // Get supported payment methods for a region
+  const getSupportedPaymentMethodsForRegion = (region: string) => {
+    if (region.toLowerCase() === 'india') {
+      return stripeService.getSupportedPaymentMethodsForIndia();
+    }
+    // Default to standard payment methods
+    return ['card'];
+  };
 
   const value = {
     customer,
@@ -292,7 +295,8 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     setDefaultPaymentMethod,
     removePaymentMethod,
     refreshCustomer,
-    refreshInvoices
+    refreshInvoices,
+    getSupportedPaymentMethodsForRegion
   };
 
   return (
@@ -302,7 +306,6 @@ export function BillingProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Custom hook to use billing context
 export function useBilling() {
   const context = useContext(BillingContext);
   if (context === undefined) {

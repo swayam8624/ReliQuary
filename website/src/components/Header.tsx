@@ -8,7 +8,9 @@ import {
   Bars3Icon, 
   XMarkIcon, 
   ShieldCheckIcon,
-  ChevronDownIcon 
+  ChevronDownIcon,
+  SunIcon,
+  MoonIcon
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -53,6 +55,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
+  const [darkMode, setDarkMode] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -64,6 +67,36 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    // Check system preference for dark mode
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setDarkMode(true);
+    }
+    
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+    } else if (savedTheme === 'light') {
+      setDarkMode(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Apply theme to document
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
   const isActive = (href: string) => {
     if (href === '/') {
       return pathname === '/';
@@ -74,7 +107,7 @@ export default function Header() {
   return (
     <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
       scrolled 
-        ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100' 
+        ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-100 dark:border-gray-800' 
         : 'bg-transparent'
     }`}>
       <nav className="container-custom">
@@ -86,7 +119,7 @@ export default function Header() {
               <ShieldCheckIcon className="h-8 w-8 text-primary-600 group-hover:text-primary-700 transition-colors" />
               <div className="absolute inset-0 bg-primary-500 opacity-20 rounded-full blur-lg group-hover:opacity-30 transition-opacity"></div>
             </div>
-            <span className="text-xl font-bold gradient-text">ReliQuary</span>
+            <span className="text-xl font-bold gradient-text dark:text-white">ReliQuary</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -101,7 +134,7 @@ export default function Header() {
                   >
                     <button
                       className={`nav-link flex items-center space-x-1 ${
-                        isActive(item.href) ? 'text-primary-600' : ''
+                        isActive(item.href) ? 'text-primary-600 dark:text-primary-400' : 'dark:text-gray-300'
                       }`}
                     >
                       <span>{item.name}</span>
@@ -115,13 +148,13 @@ export default function Header() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ duration: 0.2 }}
-                          className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2"
+                          className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-2"
                         >
                           {item.submenu.map((subItem) => (
                             <Link
                               key={subItem.name}
                               href={subItem.href}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors"
+                              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                             >
                               {subItem.name}
                             </Link>
@@ -134,7 +167,7 @@ export default function Header() {
                   <Link
                     href={item.href}
                     className={`nav-link ${
-                      isActive(item.href) ? 'text-primary-600' : ''
+                      isActive(item.href) ? 'text-primary-600 dark:text-primary-400' : 'dark:text-gray-300'
                     }`}
                   >
                     {item.name}
@@ -144,11 +177,23 @@ export default function Header() {
             ))}
           </div>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons and Dark Mode Toggle */}
           <div className="hidden lg:flex items-center space-x-4">
+            <button
+              onClick={toggleDarkMode}
+              className="dark-mode-toggle"
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? (
+                <SunIcon className="h-5 w-5" />
+              ) : (
+                <MoonIcon className="h-5 w-5" />
+              )}
+            </button>
+            
             <Link
               href="/login"
-              className="text-gray-600 hover:text-primary-600 font-medium transition-colors"
+              className="text-gray-600 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 font-medium transition-colors"
             >
               Sign In
             </Link>
@@ -161,18 +206,32 @@ export default function Header() {
           </div>
 
           {/* Mobile menu button */}
-          <button
-            type="button"
-            className="lg:hidden p-2 rounded-md text-gray-600 hover:text-primary-600 hover:bg-gray-100 transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <span className="sr-only">Open main menu</span>
-            {mobileMenuOpen ? (
-              <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-            ) : (
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-            )}
-          </button>
+          <div className="flex items-center space-x-2 lg:hidden">
+            <button
+              onClick={toggleDarkMode}
+              className="dark-mode-toggle p-2"
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? (
+                <SunIcon className="h-5 w-5" />
+              ) : (
+                <MoonIcon className="h-5 w-5" />
+              )}
+            </button>
+            
+            <button
+              type="button"
+              className="p-2 rounded-md text-gray-600 hover:text-primary-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-primary-400 dark:hover:bg-gray-800 transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <span className="sr-only">Open main menu</span>
+              {mobileMenuOpen ? (
+                <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -183,7 +242,7 @@ export default function Header() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden bg-white border-t border-gray-100 shadow-lg"
+              className="lg:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shadow-lg"
             >
               <div className="px-4 pt-4 pb-6 space-y-4">
                 {navigation.map((item) => (
@@ -192,8 +251,8 @@ export default function Header() {
                       href={item.href}
                       className={`block py-2 text-base font-medium transition-colors ${
                         isActive(item.href) 
-                          ? 'text-primary-600' 
-                          : 'text-gray-700 hover:text-primary-600'
+                          ? 'text-primary-600 dark:text-primary-400' 
+                          : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
                       }`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -205,7 +264,7 @@ export default function Header() {
                           <Link
                             key={subItem.name}
                             href={subItem.href}
-                            className="block py-1 text-sm text-gray-600 hover:text-primary-600 transition-colors"
+                            className="block py-1 text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors"
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             {subItem.name}
@@ -216,10 +275,10 @@ export default function Header() {
                   </div>
                 ))}
                 
-                <div className="pt-4 border-t border-gray-100 space-y-3">
+                <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
                   <Link
                     href="/login"
-                    className="block w-full text-center py-2 text-gray-600 hover:text-primary-600 font-medium transition-colors"
+                    className="block w-full text-center py-2 text-gray-600 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 font-medium transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Sign In
