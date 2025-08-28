@@ -1,0 +1,559 @@
+# Security Hardening Configuration for ReliQuary Production
+# Comprehensive security policies, contexts, and standards
+
+---
+# Pod Security Standards - Restricted policy for maximum security
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: reliquary
+  labels:
+    name: reliquary
+    security.policy: strict
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+  annotations:
+    description: "ReliQuary production namespace with strict security policies"
+
+---
+# Security Context Constraints for OpenShift compatibility
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: reliquary-restricted-scc
+  namespace: reliquary
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegedContainer: false
+allowedCapabilities: []
+defaultAddCapabilities: []
+requiredDropCapabilities:
+  - ALL
+allowedFlexVolumes: []
+fsGroup:
+  type: MustRunAs
+  ranges:
+    - min: 1000
+    - max: 65535
+readOnlyRootFilesystem: true
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: MustRunAs
+  ranges:
+    - min: 1000
+    - max: 65535
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - persistentVolumeClaim
+  - projected
+  - secret
+
+---
+# Network Security Policy - Deny all traffic by default
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: reliquary
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Network Policy - Allow DNS resolution
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: reliquary
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Network Policy - Allow platform to database communication
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-platform-to-db
+  namespace: reliquary
+spec:
+  podSelector:
+    matchLabels:
+      app: reliquary-platform
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+# Network Policy - Allow ingress to platform
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-platform
+  namespace: reliquary
+spec:
+  podSelector:
+    matchLabels:
+      app: reliquary-platform
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8080
+
+---
+# Pod Security Policy (deprecated but still in use in some clusters)
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: reliquary-restricted-psp
+  namespace: reliquary
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - "configMap"
+    - "emptyDir"
+    - "projected"
+    - "secret"
+    - "downwardAPI"
+    - "persistentVolumeClaim"
+  runAsUser:
+    rule: "MustRunAsNonRoot"
+  seLinux:
+    rule: "RunAsAny"
+  fsGroup:
+    rule: "RunAsAny"
+  readOnlyRootFilesystem: true
+  seccompProfile:
+    type: RuntimeDefault
+  supplementalGroups:
+    rule: "MustRunAs"
+    ranges:
+      - min: 1000
+        max: 65535
+
+---
+# RBAC for Pod Security Policy
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: psp-user
+  namespace: reliquary
+rules:
+  - apiGroups: ["policy"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["use"]
+    resourceNames:
+      - reliquary-restricted-psp
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: psp-user-binding
+  namespace: reliquary
+roleRef:
+  kind: Role
+  name: psp-user
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: reliquary-platform-sa
+    namespace: reliquary
+  - kind: ServiceAccount
+    name: reliquary-orchestrator-sa
+    namespace: reliquary
+
+---
+# Resource Quotas for security and resource management
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: reliquary-security-quota
+  namespace: reliquary
+spec:
+  hard:
+    # Compute resources
+    requests.cpu: "20"
+    requests.memory: 40Gi
+    limits.cpu: "40"
+    limits.memory: 80Gi
+
+    # Storage
+    persistentvolumeclaims: "20"
+    requests.storage: 100Gi
+
+    # Network
+    services: "10"
+    services.loadbalancers: "2"
+    services.nodeports: "0" # No NodePorts for security
+
+    # Security objects
+    secrets: "20"
+    configmaps: "20"
+
+    # Pods and deployments
+    pods: "50"
+    replicationcontrollers: "10"
+    resourcequotas: "5"
+
+---
+# Limit Range for pods
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: reliquary-pod-limits
+  namespace: reliquary
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "500m"
+        memory: "1Gi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "256Mi"
+      max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "50m"
+        memory: "128Mi"
+    - type: PersistentVolumeClaim
+      min:
+        storage: "1Gi"
+      max:
+        storage: "100Gi"
+
+---
+# OPA Gatekeeper Constraint Template for security policies
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: reliquarysecuritypolicy
+spec:
+  crd:
+    spec:
+      names:
+        kind: ReliQuarySecurityPolicy
+      validation:
+        type: object
+        properties:
+          requiredLabels:
+            type: array
+            items:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package reliquarysecuritypolicy
+
+        violation[{"msg": msg}] {
+          required := input.parameters.requiredLabels
+          provided := input.review.object.metadata.labels
+          missing := required[_]
+          not provided[missing]
+          msg := sprintf("Missing required label: %v", [missing])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.object.spec.containers[_].securityContext.runAsRoot == true
+          msg := "Containers must not run as root"
+        }
+
+        violation[{"msg": msg}] {
+          input.review.object.spec.containers[_].securityContext.privileged == true
+          msg := "Privileged containers are not allowed"
+        }
+
+---
+# Gatekeeper Constraint
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: ReliQuarySecurityPolicy
+metadata:
+  name: reliquary-security-enforcement
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["reliquary"]
+  parameters:
+    requiredLabels: ["app", "version", "security.policy"]
+
+---
+# Falco Security Rules for runtime security
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: falco-rules
+  namespace: reliquary
+data:
+  reliquary_rules.yaml: |
+    - rule: Unauthorized Process in ReliQuary Container
+      desc: Detect unauthorized processes in ReliQuary containers
+      condition: >
+        spawned_process and container and
+        k8s.ns.name="reliquary" and
+        not proc.name in (python, gunicorn, uvicorn, sh, bash)
+      output: >
+        Unauthorized process in ReliQuary container
+        (user=%user.name command=%proc.cmdline container=%container.id image=%container.image)
+      priority: WARNING
+      tags: [container, process, reliquary]
+
+    - rule: ReliQuary Cryptographic Key Access
+      desc: Monitor access to cryptographic materials
+      condition: >
+        open_read and fd.name contains "/app/keys" and
+        k8s.ns.name="reliquary"
+      output: >
+        Cryptographic key file access detected
+        (user=%user.name file=%fd.name container=%container.id)
+      priority: INFO
+      tags: [crypto, security, reliquary]
+
+    - rule: ReliQuary Network Connection Anomaly
+      desc: Detect unusual network connections from ReliQuary pods
+      condition: >
+        outbound and k8s.ns.name="reliquary" and
+        not fd.sip in (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16) and
+        not fd.sport in (80, 443, 53, 5432, 6379)
+      output: >
+        Unusual outbound connection from ReliQuary
+        (connection=%fd.name container=%container.id)
+      priority: WARNING
+      tags: [network, security, reliquary]
+
+---
+# Security Scanning CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: security-scan
+  namespace: reliquary
+spec:
+  schedule: "0 2 * * *" # Daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: reliquary-security-scanner
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+            - name: trivy-scanner
+              image: aquasec/trivy:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "Starting ReliQuary security scan..."
+
+                  # Scan platform image
+                  trivy image --format json --output /tmp/platform-scan.json reliquary/platform:v5.0.0
+
+                  # Scan orchestrator image  
+                  trivy image --format json --output /tmp/orchestrator-scan.json reliquary/agent-orchestrator:v5.0.0
+
+                  # Check for HIGH and CRITICAL vulnerabilities
+                  HIGH_VULNS=$(jq '.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH") | length' /tmp/platform-scan.json | wc -l)
+                  CRITICAL_VULNS=$(jq '.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL") | length' /tmp/platform-scan.json | wc -l)
+
+                  echo "Security scan completed:"
+                  echo "  High vulnerabilities: $HIGH_VULNS"
+                  echo "  Critical vulnerabilities: $CRITICAL_VULNS"
+
+                  # Send alert if critical vulnerabilities found
+                  if [ "$CRITICAL_VULNS" -gt "0" ]; then
+                    echo "ALERT: Critical vulnerabilities detected!"
+                    # In production, this would send alerts via webhook/Slack
+                    exit 1
+                  fi
+
+                  echo "Security scan passed - no critical vulnerabilities"
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "1Gi"
+                  cpu: "500m"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          restartPolicy: OnFailure
+
+---
+# ServiceAccount for security scanner
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: reliquary-security-scanner
+  namespace: reliquary
+
+---
+# RBAC for security scanner
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: security-scanner
+  namespace: reliquary
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: security-scanner-binding
+  namespace: reliquary
+roleRef:
+  kind: Role
+  name: security-scanner
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: reliquary-security-scanner
+    namespace: reliquary
+
+---
+# Certificate management for mTLS
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: reliquary-internal-tls
+  namespace: reliquary
+spec:
+  secretName: reliquary-internal-tls-secret
+  issuerRef:
+    name: reliquary-ca-issuer
+    kind: ClusterIssuer
+  dnsNames:
+    - reliquary-platform-service.reliquary.svc.cluster.local
+    - reliquary-orchestrator-service.reliquary.svc.cluster.local
+    - postgres.reliquary.svc.cluster.local
+    - redis.reliquary.svc.cluster.local
+
+---
+# Security monitoring ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: reliquary-security-metrics
+  namespace: reliquary
+spec:
+  selector:
+    matchLabels:
+      app: reliquary-platform
+  endpoints:
+    - port: metrics
+      path: /security/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+# Security alerting rules
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: reliquary-security-alerts
+  namespace: reliquary
+spec:
+  groups:
+    - name: reliquary.security
+      interval: 30s
+      rules:
+        - alert: SecurityVulnerabilityDetected
+          expr: reliquary_security_vulnerabilities_critical > 0
+          for: 0m
+          labels:
+            severity: critical
+            component: security
+          annotations:
+            summary: "Critical security vulnerability detected"
+            description: "Critical security vulnerability found in ReliQuary images"
+
+        - alert: UnauthorizedAccess
+          expr: rate(reliquary_authentication_failures_total[5m]) > 5
+          for: 2m
+          labels:
+            severity: warning
+            component: security
+          annotations:
+            summary: "High authentication failure rate"
+            description: "More than 5 authentication failures per minute detected"
+
+        - alert: SuspiciousNetworkActivity
+          expr: reliquary_network_connections_external > 10
+          for: 1m
+          labels:
+            severity: warning
+            component: security
+          annotations:
+            summary: "Suspicious external network activity"
+            description: "Unusual number of external connections detected"

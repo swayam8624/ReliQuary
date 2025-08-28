@@ -58,3 +58,9 @@
 {"entry_index": 0, "event": "log_verification", "status": "success", "timestamp": "2025-08-28T07:03:02.296020Z", "verified": true}
 {"event": "log_summary_access", "status": "success", "timestamp": "2025-08-28T07:03:02.301480Z"}
 {"event": "log_summary_access", "status": "success", "timestamp": "2025-08-28T07:03:02.307254Z"}
+{"event": "api_shutdown", "status": "success", "timestamp": "2025-08-28T07:16:52.704997Z"}
+{"event": "api_startup", "status": "success", "timestamp": "2025-08-28T07:16:53.384476Z", "version": "0.1.0"}
+{"event": "api_shutdown", "status": "success", "timestamp": "2025-08-28T07:16:57.125594Z"}
+{"event": "api_startup", "status": "success", "timestamp": "2025-08-28T07:16:57.606402Z", "version": "0.1.0"}
+{"event": "api_shutdown", "status": "success", "timestamp": "2025-08-28T11:16:30.576818Z"}
+{"event": "api_startup", "status": "success", "timestamp": "2025-08-28T11:16:31.402076Z", "version": "0.1.0"}

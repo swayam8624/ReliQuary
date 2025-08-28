@@ -1,0 +1,362 @@
+# Production Services Configuration for ReliQuary Platform
+# Kubernetes services for internal and external connectivity
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: reliquary-platform-service
+  namespace: reliquary
+  labels:
+    app: reliquary-platform
+    component: api-server
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/health"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "30"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  selector:
+    app: reliquary-platform
+    component: api-server
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+    - name: metrics
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  sessionAffinity: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reliquary-orchestrator-service
+  namespace: reliquary
+  labels:
+    app: reliquary-agent-orchestrator
+    component: orchestrator
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  selector:
+    app: reliquary-agent-orchestrator
+    component: orchestrator
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8001
+      protocol: TCP
+    - name: metrics
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 300
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: reliquary
+  labels:
+    app: postgresql
+    component: database
+spec:
+  type: ClusterIP
+  selector:
+    app: postgresql
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+  clusterIP: None # Headless service for StatefulSet compatibility
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: reliquary
+  labels:
+    app: redis
+    component: cache
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+  clusterIP: None # Headless service
+
+---
+# External LoadBalancer Service for Public Access
+apiVersion: v1
+kind: Service
+metadata:
+  name: reliquary-external-lb
+  namespace: reliquary
+  labels:
+    app: reliquary-platform
+    service-type: external
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/health"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "30"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "5"
+    service.beta.kubernetes.io/aws-load-balancer-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-unhealthy-threshold: "3"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:us-west-2:123456789012:certificate/12345678-1234-1234-1234-123456789012"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+    service.beta.kubernetes.io/aws-load-balancer-connection-draining-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-connection-draining-timeout: "60"
+spec:
+  type: LoadBalancer
+  selector:
+    app: reliquary-platform
+    component: api-server
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 8000
+      protocol: TCP
+  sessionAffinity: None
+  externalTrafficPolicy: Local
+  loadBalancerSourceRanges:
+    - 0.0.0.0/0 # Restrict this in production
+
+---
+# Monitoring Services
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+    component: monitoring
+spec:
+  type: ClusterIP
+  selector:
+    app: prometheus
+  ports:
+    - name: web
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app: grafana
+    component: monitoring
+spec:
+  type: ClusterIP
+  selector:
+    app: grafana
+  ports:
+    - name: web
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  namespace: monitoring
+  labels:
+    app: jaeger
+    component: collector
+spec:
+  type: ClusterIP
+  selector:
+    app: jaeger
+    component: collector
+  ports:
+    - name: grpc
+      port: 14250
+      targetPort: 14250
+      protocol: TCP
+    - name: thrift-http
+      port: 14268
+      targetPort: 14268
+      protocol: TCP
+    - name: thrift-compact
+      port: 6831
+      targetPort: 6831
+      protocol: UDP
+    - name: thrift-binary
+      port: 6832
+      targetPort: 6832
+      protocol: UDP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-query
+  namespace: monitoring
+  labels:
+    app: jaeger
+    component: query
+spec:
+  type: ClusterIP
+  selector:
+    app: jaeger
+    component: query
+  ports:
+    - name: web
+      port: 16686
+      targetPort: 16686
+      protocol: TCP
+    - name: grpc
+      port: 16685
+      targetPort: 16685
+      protocol: TCP
+
+---
+# Internal communication service for agents
+apiVersion: v1
+kind: Service
+metadata:
+  name: reliquary-agents-internal
+  namespace: reliquary
+  labels:
+    app: reliquary-platform
+    purpose: internal-communication
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  type: ClusterIP
+  clusterIP: None # Headless service for direct pod communication
+  selector:
+    app: reliquary-agent-orchestrator
+  ports:
+    - name: agent-comm
+      port: 8001
+      targetPort: 8001
+      protocol: TCP
+    - name: grpc
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+  sessionAffinity: None
+  publishNotReadyAddresses: true
+
+---
+# Service for health checks and monitoring
+apiVersion: v1
+kind: Service
+metadata:
+  name: reliquary-health-service
+  namespace: reliquary
+  labels:
+    app: reliquary-platform
+    purpose: health-monitoring
+spec:
+  type: ClusterIP
+  selector:
+    app: reliquary-platform
+  ports:
+    - name: health
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+      # Only expose health endpoints
+  clusterIP: 10.100.0.10 # Static IP for health checks
+
+---
+# ServiceMonitor for Prometheus scraping
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: reliquary-platform-metrics
+  namespace: reliquary
+  labels:
+    app: reliquary-platform
+    monitoring: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: reliquary-platform
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: false
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_service_name]
+          targetLabel: service
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: reliquary-orchestrator-metrics
+  namespace: reliquary
+  labels:
+    app: reliquary-agent-orchestrator
+    monitoring: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: reliquary-agent-orchestrator
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+# Endpoint slices for custom load balancing (if needed)
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: reliquary-platform-endpoints
+  namespace: reliquary
+  labels:
+    kubernetes.io/service-name: reliquary-platform-service
+addressType: IPv4
+ports:
+  - name: http
+    protocol: TCP
+    port: 8000
+  - name: metrics
+    protocol: TCP
+    port: 8080
+endpoints: [] # Automatically populated by Kubernetes

@@ -1,0 +1,116 @@
+# ReliQuary Platform - Development Image
+# Full development environment with debugging tools
+
+FROM golang:1.21 AS builder
+
+# Build arguments
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+ARG VERSION=dev
+ARG BUILD_DATE
+ARG VCS_REF
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    ca-certificates \
+    tzdata \
+    make \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /build
+
+# Copy go mod and sum files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build with debug symbols
+RUN CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -gcflags="all=-N -l" \
+    -ldflags="-X main.version=${VERSION} -X main.buildDate=${BUILD_DATE} -X main.gitCommit=${VCS_REF}" \
+    -o reliquary ./cmd/reliquary
+
+# Development image
+FROM golang:1.21
+
+# Install development tools
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    tzdata \
+    curl \
+    jq \
+    vim \
+    git \
+    htop \
+    strace \
+    tcpdump \
+    net-tools \
+    postgresql-client \
+    redis-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Go debugging tools
+RUN go install github.com/go-delve/delve/cmd/dlv@latest \
+    && go install github.com/cosmtrek/air@latest \
+    && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+# Create reliquary user
+RUN groupadd -r reliquary && useradd -r -g reliquary reliquary
+
+# Set up directories
+RUN mkdir -p /app/config /app/data /app/logs /app/src \
+    && chown -R reliquary:reliquary /app
+
+# Copy binary from builder
+COPY --from=builder /build/reliquary /usr/local/bin/reliquary
+RUN chmod +x /usr/local/bin/reliquary
+
+# Copy development configuration
+COPY --chown=reliquary:reliquary configs/dev/ /app/config/
+COPY --chown=reliquary:reliquary . /app/src/
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Switch to reliquary user for runtime
+USER reliquary
+
+# Set working directory
+WORKDIR /app
+
+# Expose ports
+EXPOSE 8080 2345
+
+# Environment variables
+ENV RELIQUARY_CONFIG_PATH="/app/config/config.yaml" \
+    RELIQUARY_DATA_DIR="/app/data" \
+    RELIQUARY_LOG_LEVEL="debug" \
+    RELIQUARY_LOG_FORMAT="text" \
+    RELIQUARY_ENV="development" \
+    CGO_ENABLED=1 \
+    GOPROXY=https://proxy.golang.org,direct \
+    GOSUMDB=sum.golang.org
+
+# Labels for metadata
+LABEL \
+    org.opencontainers.image.title="ReliQuary Platform (Development)" \
+    org.opencontainers.image.description="Enterprise-Grade Cryptographic Memory Platform - Development Image" \
+    org.opencontainers.image.vendor="ReliQuary Team" \
+    org.opencontainers.image.version="${VERSION}" \
+    org.opencontainers.image.created="${BUILD_DATE}" \
+    org.opencontainers.image.revision="${VCS_REF}" \
+    org.opencontainers.image.source="https://github.com/reliquary/reliquary-platform" \
+    org.opencontainers.image.documentation="https://docs.reliquary.io" \
+    org.opencontainers.image.licenses="MIT"
+
+# Entry point
+ENTRYPOINT ["reliquary"]
+CMD ["server", "--config", "/app/config/config.yaml"]
