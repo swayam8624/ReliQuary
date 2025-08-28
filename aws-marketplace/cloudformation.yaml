@@ -1,0 +1,287 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "ReliQuary - Enterprise-Grade Cryptographic Memory Vault System"
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Network Configuration"
+        Parameters:
+          - VpcId
+          - SubnetIds
+      - Label:
+          default: "ReliQuary Configuration"
+        Parameters:
+          - InstanceType
+          - KeyPairName
+          - AdminEmail
+      - Label:
+          default: "Security Configuration"
+        Parameters:
+          - AllowedCIDR
+    ParameterLabels:
+      VpcId:
+        default: "VPC ID"
+      SubnetIds:
+        default: "Subnet IDs"
+      InstanceType:
+        default: "EC2 Instance Type"
+      KeyPairName:
+        default: "Key Pair Name"
+      AdminEmail:
+        default: "Administrator Email"
+      AllowedCIDR:
+        default: "Allowed CIDR Block"
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: "VPC ID for ReliQuary deployment"
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: "Subnet IDs for ReliQuary deployment"
+
+  InstanceType:
+    Type: String
+    Default: m5.large
+    AllowedValues:
+      - t3.medium
+      - t3.large
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+    Description: "EC2 instance type for ReliQuary"
+
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: "EC2 Key Pair for SSH access"
+
+  AdminEmail:
+    Type: String
+    Description: "Administrator email for notifications"
+
+  AllowedCIDR:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: "CIDR block allowed to access ReliQuary"
+
+Mappings:
+  RegionMap:
+    us-east-1:
+      AMI: ami-0abcdef1234567890
+    us-west-2:
+      AMI: ami-0abcdef1234567890
+    eu-west-1:
+      AMI: ami-0abcdef1234567890
+
+Resources:
+  ReliQuarySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for ReliQuary"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AllowedCIDR
+          Description: "SSH access"
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref AllowedCIDR
+          Description: "HTTP access"
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref AllowedCIDR
+          Description: "HTTPS access"
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: !Ref AllowedCIDR
+          Description: "ReliQuary API"
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: "Allow all outbound traffic"
+
+  ReliQuaryInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", AMI]
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref ReliQuarySecurityGroup
+      SubnetId: !Select [0, !Ref SubnetIds]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y docker git
+          systemctl start docker
+          systemctl enable docker
+          usermod -a -G docker ec2-user
+
+          # Pull ReliQuary Docker images
+          docker pull ghcr.io/reliquary/platform:latest
+          docker pull ghcr.io/reliquary/orchestrator:latest
+
+          # Create docker-compose.yml
+          cat > /home/ec2-user/docker-compose.yml << 'EOF'
+          version: '3.8'
+          services:
+            platform:
+              image: ghcr.io/reliquary/platform:latest
+              ports:
+                - "8080:8080"
+              environment:
+                - ADMIN_EMAIL=${AdminEmail}
+                - AWS_REGION=${AWS::Region}
+              volumes:
+                - platform-data:/data
+              restart: unless-stopped
+              
+            orchestrator:
+              image: ghcr.io/reliquary/orchestrator:latest
+              ports:
+                - "8081:8081"
+              environment:
+                - PLATFORM_URL=http://platform:8080
+                - AWS_REGION=${AWS::Region}
+              depends_on:
+                - platform
+              restart: unless-stopped
+              
+          volumes:
+            platform-data:
+          EOF
+
+          # Start ReliQuary services
+          cd /home/ec2-user
+          docker-compose up -d
+
+          # Install AWS CLI for monitoring
+          yum install -y awscli
+
+          # Set up monitoring
+          cat > /home/ec2-user/health-check.sh << 'EOF'
+          #!/bin/bash
+          curl -f http://localhost:8080/health || aws sns publish --topic-arn ${HealthTopic} --message "ReliQuary health check failed" --subject "ReliQuary Health Alert"
+          EOF
+
+          chmod +x /home/ec2-user/health-check.sh
+
+          # Set up cron job for health checks
+          echo "*/5 * * * * /home/ec2-user/health-check.sh" | crontab -
+
+      Tags:
+        - Key: Name
+          Value: "ReliQuary-Instance"
+
+  HealthTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: "ReliQuary-Health-Alerts"
+      TopicName: "ReliQuary-Health-Alerts"
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AdminEmail
+
+  ReliQuaryDNS:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Sub "${AWS::StackName}.example.com."
+      Name: !Sub "reliquary.${AWS::StackName}.example.com."
+      Type: A
+      TTL: "300"
+      ResourceRecords:
+        - !GetAtt ReliQuaryInstance.PublicIp
+
+  ReliQuaryLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${AWS::StackName}-reliquary-lb"
+      Subnets: !Ref SubnetIds
+      SecurityGroups:
+        - !Ref ReliQuarySecurityGroup
+      Type: application
+
+  ReliQuaryTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${AWS::StackName}-reliquary-tg"
+      Port: 8080
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      HealthCheckPath: /health
+      HealthCheckProtocol: HTTP
+      TargetType: instance
+
+  ReliQuaryListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ReliQuaryTargetGroup
+      LoadBalancerArn: !Ref ReliQuaryLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref SSLCertificateArn
+
+  ReliQuaryHTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: "443"
+            StatusCode: HTTP_301
+      LoadBalancerArn: !Ref ReliQuaryLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  ReliQuaryAttachment:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroupAttachment
+    Properties:
+      TargetGroupArn: !Ref ReliQuaryTargetGroup
+      TargetId: !Ref ReliQuaryInstance
+
+  SSLCertificateArn:
+    Type: String
+    Description: "ARN of SSL certificate for HTTPS"
+
+Outputs:
+  InstanceId:
+    Description: "ReliQuary Instance ID"
+    Value: !Ref ReliQuaryInstance
+    Export:
+      Name: !Sub "${AWS::StackName}-InstanceId"
+
+  PublicIP:
+    Description: "Public IP of ReliQuary instance"
+    Value: !GetAtt ReliQuaryInstance.PublicIp
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicIP"
+
+  LoadBalancerDNS:
+    Description: "DNS name of the load balancer"
+    Value: !GetAtt ReliQuaryLoadBalancer.DNSName
+    Export:
+      Name: !Sub "${AWS::StackName}-LoadBalancerDNS"
+
+  HealthTopicARN:
+    Description: "ARN of the health alert SNS topic"
+    Value: !Ref HealthTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-HealthTopicARN"
+
+  ReliQuaryURL:
+    Description: "URL to access ReliQuary"
+    Value: !Sub "https://${ReliQuaryLoadBalancer.DNSName}"
+    Export:
+      Name: !Sub "${AWS::StackName}-ReliQuaryURL"

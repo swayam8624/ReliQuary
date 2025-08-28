@@ -1,10 +1,12 @@
 {
   "user_id": "edge_user",
-  "baseline_trust_score": 20.59515152604167,
+  "baseline_trust_score": 20.948060106201822,
   "trust_history": [
     15.5,
     23.5925,
-    22.692954578125
+    22.692954578125,
+    21.925739468963993,
+    21.029106483920113
   ],
   "behavioral_baselines": {
     "known_devices": [
@@ -13,9 +15,13 @@
     "typical_session_durations": [
       30,
       30,
+      30,
+      30,
       30
     ],
     "typical_typing_speed": [
+      300,
+      300,
       300,
       300,
       300
@@ -39,9 +45,21 @@
       "risk_level": "VERY_HIGH",
       "trust_score": 22.692954578125,
       "session_id": null
+    },
+    {
+      "timestamp": 1756368150,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 21.925739468963993,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756368259,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 21.029106483920113,
+      "session_id": null
     }
   ],
-  "last_evaluation": 1756310040,
-  "total_evaluations": 3,
+  "last_evaluation": 1756368259,
+  "total_evaluations": 5,
   "compliance_violations": 0
 }

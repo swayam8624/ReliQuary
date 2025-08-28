@@ -84,3 +84,56 @@ test_logs/
 # These files are often large and should not be in git
 zk/proofs/
 zk/verifier/groth16.json
+
+# -----------------------------------------------------------------------------
+# Next.js Website
+# -----------------------------------------------------------------------------
+# Next.js build output
+website/.next/
+website/out/
+
+# Next.js development files
+website/.env*.local
+website/.vercel/
+website/.vscode/
+website/coverage/
+website/.nyc_output/
+website/*.log
+website/npm-debug.log*
+website/yarn-debug.log*
+website/yarn-error.log*
+
+# Dependencies
+website/node_modules/
+
+# Testing
+website/.jest/
+website/jest/
+website/jest.config.js
+
+# Typescript
+website/*.tsbuildinfo
+
+# -----------------------------------------------------------------------------
+# SDK Specific
+# -----------------------------------------------------------------------------
+# Go SDK
+sdk/go/bin/
+sdk/go/pkg/
+sdk/go/src/
+
+# Java SDK
+sdk/java/target/
+sdk/java/bin/
+sdk/java/.gradle/
+sdk/java/build/
+sdk/java/*.iml
+sdk/java/*.iws
+sdk/java/*.ipr
+sdk/java/out/
+sdk/java/atlassian-ide-plugin.xml
+sdk/java/.settings/
+sdk/java/.project
+sdk/java/.classpath
+sdk/java/.metadata
+sdk/java/.DS_Store

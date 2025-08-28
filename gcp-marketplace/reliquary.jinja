@@ -1,0 +1,307 @@
+{# Copyright 2025 ReliQuary Inc. #}
+{# #}
+{# Licensed under the Apache License, Version 2.0 (the "License"); #}
+{# you may not use this file except in compliance with the License. #}
+{# You may obtain a copy of the License at #}
+{# #}
+{#     http://www.apache.org/licenses/LICENSE-2.0 #}
+{# #}
+{# Unless required by applicable law or agreed to in writing, software #}
+{# distributed under the License is distributed on an "AS IS" BASIS, #}
+{# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #}
+{# See the License for the specific language governing permissions and #}
+{# limitations under the License. #}
+
+{% set NAME = env["deployment"] + "-" + env["name"] %}
+{% set SERVICE_ACCOUNT = env["project"] + "@" + env["project"] + ".iam.gserviceaccount.com" %}
+
+resources:
+- name: {{ NAME }}-network
+  type: compute.v1.network
+  properties:
+    autoCreateSubnetworks: false
+
+- name: {{ NAME }}-subnet
+  type: compute.v1.subnetwork
+  properties:
+    network: $(ref.{{ NAME }}-network.selfLink)
+    ipCidrRange: 10.0.0.0/24
+    region: {{ properties["zone"][:-2] }}
+
+- name: {{ NAME }}-firewall-allow-internal
+  type: compute.v1.firewall
+  properties:
+    network: $(ref.{{ NAME }}-network.selfLink)
+    sourceRanges: ["10.0.0.0/24"]
+    allowed:
+    - IPProtocol: tcp
+    - IPProtocol: udp
+    - IPProtocol: icmp
+
+- name: {{ NAME }}-firewall-allow-ssh
+  type: compute.v1.firewall
+  properties:
+    network: $(ref.{{ NAME }}-network.selfLink)
+    sourceRanges: ["0.0.0.0/0"]
+    allowed:
+    - IPProtocol: tcp
+      ports: ["22"]
+
+- name: {{ NAME }}-firewall-allow-http
+  type: compute.v1.firewall
+  properties:
+    network: $(ref.{{ NAME }}-network.selfLink)
+    sourceRanges: ["0.0.0.0/0"]
+    allowed:
+    - IPProtocol: tcp
+      ports: ["80"]
+
+- name: {{ NAME }}-firewall-allow-https
+  type: compute.v1.firewall
+  properties:
+    network: $(ref.{{ NAME }}-network.selfLink)
+    sourceRanges: ["0.0.0.0/0"]
+    allowed:
+    - IPProtocol: tcp
+      ports: ["443"]
+
+- name: {{ NAME }}-firewall-allow-api
+  type: compute.v1.firewall
+  properties:
+    network: $(ref.{{ NAME }}-network.selfLink)
+    sourceRanges: ["0.0.0.0/0"]
+    allowed:
+    - IPProtocol: tcp
+      ports: ["8080"]
+
+- name: {{ NAME }}-instance
+  type: compute.v1.instance
+  properties:
+    zone: {{ properties["zone"] }}
+    machineType: zones/{{ properties["zone"] }}/machineTypes/{{ properties["machineType"] }}
+    serviceAccounts:
+    - email: {{ SERVICE_ACCOUNT }}
+      scopes:
+      - https://www.googleapis.com/auth/cloud-platform
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-2004-lts
+        diskSizeGb: 50
+    networkInterfaces:
+    - network: $(ref.{{ NAME }}-network.selfLink)
+      subnetwork: $(ref.{{ NAME }}-subnet.selfLink)
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+    metadata:
+      items:
+      - key: ssh-keys
+        value: ubuntu:{{ properties["sshPublicKey"] }}
+      - key: startup-script
+        value: |
+          #!/bin/bash
+          set -e
+          
+          # Update system
+          apt-get update -y
+          apt-get upgrade -y
+          
+          # Install Docker
+          apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt-get update -y
+          apt-get install -y docker-ce docker-ce-cli containerd.io
+          
+          # Install Docker Compose
+          curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          
+          # Start and enable Docker
+          systemctl start docker
+          systemctl enable docker
+          
+          # Create reliquary user
+          useradd -m -s /bin/bash reliquary
+          usermod -aG docker reliquary
+          
+          # Create installation directory
+          mkdir -p /opt/reliquary
+          chown reliquary:reliquary /opt/reliquary
+          cd /opt/reliquary
+          
+          # Create docker-compose.yml
+          cat > docker-compose.yml << 'EOF'
+          version: '3.8'
+          
+          services:
+            platform:
+              image: ghcr.io/reliquary/platform:latest
+              container_name: reliquary-platform
+              ports:
+                - "8080:8080"
+              environment:
+                - ADMIN_EMAIL={{ properties["adminEmail"] }}
+                - GCP_REGION={{ properties["zone"][:-2] }}
+                - LOG_LEVEL=info
+              volumes:
+                - platform-data:/data
+                - ./logs:/var/log/reliquary
+              restart: unless-stopped
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+                interval: 30s
+                timeout: 10s
+                retries: 3
+                start_period: 60s
+          
+            orchestrator:
+              image: ghcr.io/reliquary/orchestrator:latest
+              container_name: reliquary-orchestrator
+              ports:
+                - "8081:8081"
+              environment:
+                - PLATFORM_URL=http://platform:8080
+                - GCP_REGION={{ properties["zone"][:-2] }}
+                - LOG_LEVEL=info
+              depends_on:
+                platform:
+                  condition: service_healthy
+              restart: unless-stopped
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+                interval: 30s
+                timeout: 10s
+                retries: 3
+                start_period: 60s
+          
+            nginx:
+              image: nginx:alpine
+              container_name: reliquary-nginx
+              ports:
+                - "80:80"
+                - "443:443"
+              volumes:
+                - ./nginx.conf:/etc/nginx/nginx.conf
+                - ./ssl:/etc/nginx/ssl
+              depends_on:
+                - platform
+                - orchestrator
+              restart: unless-stopped
+          
+          volumes:
+            platform-data:
+          EOF
+          
+          # Create basic nginx configuration
+          cat > nginx.conf << 'EOF'
+          events {
+              worker_connections 1024;
+          }
+          
+          http {
+              upstream reliquary_backend {
+                  server platform:8080;
+              }
+              
+              upstream orchestrator_backend {
+                  server orchestrator:8081;
+              }
+              
+              server {
+                  listen 80;
+                  server_name _;
+                  
+                  location / {
+                      proxy_pass http://reliquary_backend;
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                  }
+                  
+                  location /api/orchestrator/ {
+                      proxy_pass http://orchestrator_backend/;
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                  }
+              }
+          }
+          EOF
+          
+          # Create log directory
+          mkdir -p logs
+          chown -R reliquary:reliquary logs
+          
+          # Pull Docker images
+          sudo -u reliquary docker-compose pull
+          
+          # Start services
+          sudo -u reliquary docker-compose up -d
+          
+          # Install Google Cloud SDK for monitoring
+          echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+          apt-get update -y
+          apt-get install -y google-cloud-sdk
+          
+          # Create health check script
+          cat > /opt/reliquary/health-check.sh << 'EOF'
+          #!/bin/bash
+          
+          # Health check script for ReliQuary
+          
+          # Check if containers are running
+          if ! sudo docker-compose ps | grep -q "Up"; then
+              echo "ReliQuary containers are not running properly"
+              # Send alert via Google Cloud Logging
+              logger -t reliquary-health "ReliQuary health check failed: containers not running"
+              exit 1
+          fi
+          
+          # Check platform health endpoint
+          if ! curl -f http://localhost:8080/health >/dev/null 2>&1; then
+              echo "ReliQuary platform health check failed"
+              logger -t reliquary-health "ReliQuary platform health check failed"
+              exit 1
+          fi
+          
+          # Check orchestrator health endpoint
+          if ! curl -f http://localhost:8081/health >/dev/null 2>&1; then
+              echo "ReliQuary orchestrator health check failed"
+              logger -t reliquary-health "ReliQuary orchestrator health check failed"
+              exit 1
+          fi
+          
+          echo "All health checks passed"
+          exit 0
+          EOF
+          
+          chmod +x /opt/reliquary/health-check.sh
+          
+          # Set up cron job for health checks
+          (crontab -l 2>/dev/null; echo "*/5 * * * * /opt/reliquary/health-check.sh") | crontab -
+          
+          # Output completion message
+          echo "ReliQuary installation completed successfully!"
+          echo "Access your ReliQuary instance at: http://$(curl -s http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip -H "Metadata-Flavor: Google")"
+          echo "API endpoint: http://$(curl -s http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip -H "Metadata-Flavor: Google"):8080"
+          echo "Admin email notifications will be sent to: {{ properties["adminEmail"] }}"
+          
+          # Final status check
+          sleep 30
+          sudo -u reliquary docker-compose ps
+
+outputs:
+- name: instanceIP
+  value: $(ref.{{ NAME }}-instance.networkInterfaces[0].accessConfigs[0].natIP)
+- name: instanceName
+  value: $(ref.{{ NAME }}-instance.name)
+- name: instanceZone
+  value: $(ref.{{ NAME }}-instance.zone)

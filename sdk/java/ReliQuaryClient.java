@@ -619,10 +619,11 @@ public class ReliQuaryClient implements AutoCloseable {
      * Check system health
      */
     public CompletableFuture<Map<String, Object>> healthCheck() {
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return makeRequest("GET", "/health", null, new TypeReference<Map<String, Object>>() {
-                });
+                return makeRequest("GET", "/health", null, typeRef);
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
@@ -633,10 +634,11 @@ public class ReliQuaryClient implements AutoCloseable {
      * Get comprehensive system status
      */
     public CompletableFuture<Map<String, Object>> getSystemStatus() {
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return makeRequest("GET", "/status", null, new TypeReference<Map<String, Object>>() {
-                });
+                return makeRequest("GET", "/status", null, typeRef);
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
@@ -649,11 +651,11 @@ public class ReliQuaryClient implements AutoCloseable {
      * Refresh authentication token
      */
     public CompletableFuture<String> refreshToken() {
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
-                Map<String, Object> response = makeRequest("POST", "/auth/refresh", null,
-                        new TypeReference<Map<String, Object>>() {
-                        });
+                Map<String, Object> response = makeRequest("POST", "/auth/refresh", null, typeRef);
                 accessToken = (String) response.get("access_token");
                 return accessToken;
             } catch (Exception e) {
@@ -666,10 +668,11 @@ public class ReliQuaryClient implements AutoCloseable {
      * Get current user profile
      */
     public CompletableFuture<Map<String, Object>> getUserProfile() {
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return makeRequest("GET", "/auth/profile", null, new TypeReference<Map<String, Object>>() {
-                });
+                return makeRequest("GET", "/auth/profile", null, typeRef);
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
@@ -682,10 +685,11 @@ public class ReliQuaryClient implements AutoCloseable {
      * Submit request for multi-agent consensus
      */
     public CompletableFuture<ConsensusResult> submitConsensusRequest(ConsensusRequest request) {
+        TypeReference<ConsensusResult> typeRef = new TypeReference<ConsensusResult>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return makeRequest("POST", "/consensus/submit", request, new TypeReference<ConsensusResult>() {
-                });
+                return makeRequest("POST", "/consensus/submit", request, typeRef);
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
@@ -696,10 +700,11 @@ public class ReliQuaryClient implements AutoCloseable {
      * Get consensus result by request ID
      */
     public CompletableFuture<ConsensusResult> getConsensusResult(String requestId) {
+        TypeReference<ConsensusResult> typeRef = new TypeReference<ConsensusResult>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return makeRequest("GET", "/consensus/result/" + requestId, null, new TypeReference<ConsensusResult>() {
-                });
+                return makeRequest("GET", "/consensus/result/" + requestId, null, typeRef);
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
@@ -710,11 +715,11 @@ public class ReliQuaryClient implements AutoCloseable {
      * List active consensus operations
      */
     public CompletableFuture<List<Map<String, Object>>> listActiveConsensus() {
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
-                Map<String, Object> response = makeRequest("GET", "/consensus/active", null,
-                        new TypeReference<Map<String, Object>>() {
-                        });
+                Map<String, Object> response = makeRequest("GET", "/consensus/active", null, typeRef);
                 return (List<Map<String, Object>>) response.get("active_consensus");
             } catch (Exception e) {
                 throw new CompletionException(e);
@@ -728,10 +733,11 @@ public class ReliQuaryClient implements AutoCloseable {
      * Generate zero-knowledge proof
      */
     public CompletableFuture<Map<String, Object>> generateZKProof(ZKProofRequest request) {
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return makeRequest("POST", "/zk/generate", request, new TypeReference<Map<String, Object>>() {
-                });
+                return makeRequest("POST", "/zk/generate", request, typeRef);
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
@@ -743,6 +749,8 @@ public class ReliQuaryClient implements AutoCloseable {
      */
     public CompletableFuture<Boolean> verifyZKProof(String proofId, Map<String, Object> proof,
             List<String> publicSignals) {
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
                 Map<String, Object> requestData = new HashMap<>();
@@ -750,9 +758,7 @@ public class ReliQuaryClient implements AutoCloseable {
                 requestData.put("proof", proof);
                 requestData.put("public_signals", publicSignals);
 
-                Map<String, Object> response = makeRequest("POST", "/zk/verify", requestData,
-                        new TypeReference<Map<String, Object>>() {
-                        });
+                Map<String, Object> response = makeRequest("POST", "/zk/verify", requestData, typeRef);
                 return (Boolean) response.get("valid");
             } catch (Exception e) {
                 throw new CompletionException(e);
@@ -771,6 +777,8 @@ public class ReliQuaryClient implements AutoCloseable {
             Map<String, Object> contextData,
             DecisionStrategy strategy) {
 
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
                 Map<String, Object> requestData = new HashMap<>();
@@ -779,9 +787,7 @@ public class ReliQuaryClient implements AutoCloseable {
                 requestData.put("context_data", contextData);
                 requestData.put("optimization_strategy", strategy.getValue());
 
-                return makeRequest("POST", "/ai-ml/decisions/enhance", requestData,
-                        new TypeReference<Map<String, Object>>() {
-                        });
+                return makeRequest("POST", "/ai-ml/decisions/enhance", requestData, typeRef);
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
@@ -792,6 +798,8 @@ public class ReliQuaryClient implements AutoCloseable {
      * Record custom metric
      */
     public CompletableFuture<Map<String, Object>> recordMetric(String name, double value, Map<String, String> labels) {
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
+        };
         return CompletableFuture.supplyAsync(() -> {
             try {
                 Map<String, Object> requestData = new HashMap<>();
@@ -799,9 +807,7 @@ public class ReliQuaryClient implements AutoCloseable {
                 requestData.put("value", value);
                 requestData.put("labels", labels != null ? labels : new HashMap<>());
 
-                return makeRequest("POST", "/observability/metrics/record", requestData,
-                        new TypeReference<Map<String, Object>>() {
-                        });
+                return makeRequest("POST", "/observability/metrics/record", requestData, typeRef);
             } catch (Exception e) {
                 throw new CompletionException(e);
             }

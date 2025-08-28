@@ -20,7 +20,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -30,10 +29,10 @@ import (
 type ConsensusType string
 
 const (
-	AccessRequest        ConsensusType = "access_request"
-	GovernanceDecision   ConsensusType = "governance_decision"
-	EmergencyResponse    ConsensusType = "emergency_response"
-	SecurityValidation   ConsensusType = "security_validation"
+	AccessRequest      ConsensusType = "access_request"
+	GovernanceDecision ConsensusType = "governance_decision"
+	EmergencyResponse  ConsensusType = "emergency_response"
+	SecurityValidation ConsensusType = "security_validation"
 )
 
 // DecisionStrategy represents AI/ML decision optimization strategies
@@ -57,27 +56,27 @@ type AuthCredentials struct {
 
 // ConsensusRequest represents a multi-agent consensus request
 type ConsensusRequest struct {
-	RequestType     ConsensusType          `json:"request_type"`
-	ContextData     map[string]interface{} `json:"context_data"`
-	UserID          string                 `json:"user_id"`
-	ResourcePath    string                 `json:"resource_path"`
-	Priority        int                    `json:"priority"`
-	TimeoutSeconds  int                    `json:"timeout_seconds"`
-	RequiredAgents  []string               `json:"required_agents,omitempty"`
-	Metadata        map[string]interface{} `json:"metadata"`
+	RequestType    ConsensusType          `json:"request_type"`
+	ContextData    map[string]interface{} `json:"context_data"`
+	UserID         string                 `json:"user_id"`
+	ResourcePath   string                 `json:"resource_path"`
+	Priority       int                    `json:"priority"`
+	TimeoutSeconds int                    `json:"timeout_seconds"`
+	RequiredAgents []string               `json:"required_agents,omitempty"`
+	Metadata       map[string]interface{} `json:"metadata"`
 }
 
 // ConsensusResult represents the result of a consensus operation
 type ConsensusResult struct {
-	RequestID            string                 `json:"request_id"`
-	Decision             string                 `json:"decision"`
-	ConfidenceScore      float64                `json:"confidence_score"`
-	ParticipatingAgents  []string               `json:"participating_agents"`
-	ConsensusTimeMs      float64                `json:"consensus_time_ms"`
-	DetailedVotes        map[string]interface{} `json:"detailed_votes"`
-	RiskAssessment       map[string]interface{} `json:"risk_assessment"`
-	Timestamp            time.Time              `json:"timestamp"`
-	Success              bool                   `json:"success"`
+	RequestID           string                 `json:"request_id"`
+	Decision            string                 `json:"decision"`
+	ConfidenceScore     float64                `json:"confidence_score"`
+	ParticipatingAgents []string               `json:"participating_agents"`
+	ConsensusTimeMs     float64                `json:"consensus_time_ms"`
+	DetailedVotes       map[string]interface{} `json:"detailed_votes"`
+	RiskAssessment      map[string]interface{} `json:"risk_assessment"`
+	Timestamp           time.Time              `json:"timestamp"`
+	Success             bool                   `json:"success"`
 }
 
 // ZKProofRequest represents a zero-knowledge proof generation request
@@ -90,24 +89,24 @@ type ZKProofRequest struct {
 
 // ZKProofResult represents the result of zero-knowledge proof generation
 type ZKProofResult struct {
-	ProofID           string                 `json:"proof_id"`
-	Proof             map[string]interface{} `json:"proof"`
-	PublicSignals     []string               `json:"public_signals"`
-	VerificationKey   map[string]interface{} `json:"verification_key"`
-	CircuitType       string                 `json:"circuit_type"`
-	GenerationTimeMs  float64                `json:"generation_time_ms"`
-	Valid             bool                   `json:"valid"`
-	Timestamp         time.Time              `json:"timestamp"`
+	ProofID          string                 `json:"proof_id"`
+	Proof            map[string]interface{} `json:"proof"`
+	PublicSignals    []string               `json:"public_signals"`
+	VerificationKey  map[string]interface{} `json:"verification_key"`
+	CircuitType      string                 `json:"circuit_type"`
+	GenerationTimeMs float64                `json:"generation_time_ms"`
+	Valid            bool                   `json:"valid"`
+	Timestamp        time.Time              `json:"timestamp"`
 }
 
 // ClientStats represents client performance statistics
 type ClientStats struct {
-	TotalRequests        int64   `json:"total_requests"`
+	TotalRequests         int64   `json:"total_requests"`
 	AverageResponseTimeMs float64 `json:"average_response_time_ms"`
-	ErrorCount           int64   `json:"error_count"`
-	ErrorRatePercent     float64 `json:"error_rate_percent"`
-	BaseURL              string  `json:"base_url"`
-	Authenticated        bool    `json:"authenticated"`
+	ErrorCount            int64   `json:"error_count"`
+	ErrorRatePercent      float64 `json:"error_rate_percent"`
+	BaseURL               string  `json:"base_url"`
+	Authenticated         bool    `json:"authenticated"`
 }
 
 // Client represents the ReliQuary SDK client
@@ -123,10 +122,10 @@ type Client struct {
 	tokenExpires *time.Time
 
 	// Performance tracking
-	mu                  sync.RWMutex
-	requestCount        int64
-	totalResponseTime   time.Duration
-	errorCount          int64
+	mu                sync.RWMutex
+	requestCount      int64
+	totalResponseTime time.Duration
+	errorCount        int64
 }
 
 // ClientOption represents a configuration option for the client
@@ -479,9 +478,9 @@ func (c *Client) VerifyZKProof(ctx context.Context, proofID string, proof map[st
 // GetAIEnhancedDecision gets an AI/ML enhanced decision
 func (c *Client) GetAIEnhancedDecision(ctx context.Context, decisionType string, userData, contextData map[string]interface{}, strategy DecisionStrategy) (map[string]interface{}, error) {
 	requestData := map[string]interface{}{
-		"decision_type":        decisionType,
-		"user_data":           userData,
-		"context_data":        contextData,
+		"decision_type":         decisionType,
+		"user_data":             userData,
+		"context_data":          contextData,
 		"optimization_strategy": string(strategy),
 	}
 
@@ -492,7 +491,7 @@ func (c *Client) GetAIEnhancedDecision(ctx context.Context, decisionType string,
 
 // AnalyzeBehavioralPatterns analyzes user behavioral patterns
 func (c *Client) AnalyzeBehavioralPatterns(ctx context.Context, userID string, timeRangeHours int) (map[string]interface{}, error) {
-	endpoint := fmt.Sprintf("/ai-ml/analytics/patterns?user_id=%s&time_range_hours=%d", 
+	endpoint := fmt.Sprintf("/ai-ml/analytics/patterns?user_id=%s&time_range_hours=%d",
 		url.QueryEscape(userID), timeRangeHours)
 
 	var result map[string]interface{}
@@ -587,7 +586,7 @@ func (c *Client) StoreSecret(ctx context.Context, vaultID, secretName, secretVal
 
 // RetrieveSecret retrieves a secret from a vault
 func (c *Client) RetrieveSecret(ctx context.Context, vaultID, secretName string) (map[string]interface{}, error) {
-	endpoint := fmt.Sprintf("/vaults/secrets?vault_id=%s&secret_name=%s", 
+	endpoint := fmt.Sprintf("/vaults/secrets?vault_id=%s&secret_name=%s",
 		url.QueryEscape(vaultID), url.QueryEscape(secretName))
 
 	var result map[string]interface{}
