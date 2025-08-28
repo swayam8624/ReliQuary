@@ -15,7 +15,8 @@ import {
   ClockIcon,
   ShieldCheckIcon,
   GlobeAltIcon,
-  CogIcon
+  CogIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 interface ApiKey {

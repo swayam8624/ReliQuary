@@ -176,11 +176,11 @@ body {
 
 /* Form styles - FIXED INPUT VISIBILITY */
 .form-input {
-  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900;
+  @apply w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
 }
 
 .form-input::placeholder {
-  @apply text-gray-500;
+  @apply text-gray-500 dark:text-gray-400;
 }
 
 .form-input:focus {
@@ -243,21 +243,8 @@ body {
     @apply bg-gray-800 border-gray-700 text-white;
   }
   
-  .form-input {
-    @apply bg-gray-800 border-gray-600 text-white;
-  }
-  
   .nav-link {
     @apply text-gray-300 hover:text-primary-400;
-  }
-  
-  /* Dark mode form input fix */
-  .form-input {
-    @apply bg-gray-800 border-gray-600 text-white;
-  }
-  
-  .form-input::placeholder {
-    @apply text-gray-400;
   }
 }
 

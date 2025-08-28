@@ -1,7 +1,7 @@
 // Multi-Tenant Authentication Service
 // Integrates with backend multi-tenancy system for SaaS platform
 
-import { useState, useEffect, useContext, createContext } from 'react';
+import React, { useState, useEffect, useContext, createContext } from 'react';
 
 // Types
 interface Tenant {
@@ -11,6 +11,7 @@ interface Tenant {
   createdAt: string;
   isActive: boolean;
   customDomains: string[];
+  avatar?: string;
   features: {
     customDomains: boolean;
     ssoIntegration: boolean;
@@ -295,19 +296,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
+  // Simplified return statement to test if the issue is with the JSX
+  return React.createElement(
+    AuthContext.Provider,
+    {
+      value: {
         authState,
         login,
         register,
         logout,
         switchTenant,
         refreshAuth
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+      }
+    },
+    children
   );
 }
 

@@ -68,22 +68,30 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    // Check system preference for dark mode
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setDarkMode(true);
-    }
-    
-    // Check for saved theme preference
+    // First check for saved theme preference
     const savedTheme = localStorage.getItem('theme');
+    
+    // Apply theme immediately based on saved preference or system preference
     if (savedTheme === 'dark') {
       setDarkMode(true);
+      document.documentElement.classList.add('dark');
     } else if (savedTheme === 'light') {
       setDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    } else {
+      // If no saved preference, check system preference
+      const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setDarkMode(isSystemDark);
+      if (isSystemDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
   }, []);
 
   useEffect(() => {
-    // Apply theme to document
+    // Apply theme to document when darkMode state changes
     if (darkMode) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');

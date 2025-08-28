@@ -485,12 +485,17 @@ export default function Downloads() {
             <div className="grid lg:grid-cols-2 gap-8">
               <div>
                 <div className="flex items-center space-x-3 mb-6">
-                  <deploymentOptions[activeDeployment].icon className={`h-8 w-8 ${
-                    deploymentOptions[activeDeployment].color === 'blue' ? 'text-blue-600' :
-                    deploymentOptions[activeDeployment].color === 'purple' ? 'text-purple-600' :
-                    deploymentOptions[activeDeployment].color === 'green' ? 'text-green-600' :
-                    'text-orange-600'
-                  }`} />
+                  {deploymentOptions[activeDeployment].icon && (() => {
+                    const IconComponent = deploymentOptions[activeDeployment].icon;
+                    return (
+                      <IconComponent className={`h-8 w-8 ${
+                        deploymentOptions[activeDeployment].color === 'blue' ? 'text-blue-600' :
+                        deploymentOptions[activeDeployment].color === 'purple' ? 'text-purple-600' :
+                        deploymentOptions[activeDeployment].color === 'green' ? 'text-green-600' :
+                        'text-orange-600'
+                      }`} />
+                    );
+                  })()}
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">
                       {deploymentOptions[activeDeployment].name}

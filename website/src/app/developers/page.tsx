@@ -63,12 +63,14 @@ const quickStartSteps = [
   {
     title: 'Sign up for an account',
     description: 'Create your ReliQuary account and get your API keys',
-    code: 'npm install @reliquary/sdk'
+    code: 'npm install @reliquary/sdk',
+    color: 'bg-primary-500'
   },
   {
     title: 'Install the SDK',
     description: 'Add our SDK to your project with your preferred package manager',
-    code: 'yarn add @reliquary/sdk'
+    code: 'yarn add @reliquary/sdk',
+    color: 'bg-green-500'
   },
   {
     title: 'Initialize the client',
@@ -78,7 +80,8 @@ const quickStartSteps = [
 const client = new ReliQuaryClient({
   apiKey: 'your-api-key',
   projectId: 'your-project-id'
-});`
+});`,
+    color: 'bg-purple-500'
   },
   {
     title: 'Start building',
@@ -90,7 +93,8 @@ const keyPair = await client.crypto.generateKeyPair();
 const encrypted = await client.crypto.encrypt(data, publicKey);
 
 // Sign a document
-const signature = await client.crypto.sign(document, privateKey);`
+const signature = await client.crypto.sign(document, privateKey);`,
+    color: 'bg-yellow-500'
   }
 ];
 

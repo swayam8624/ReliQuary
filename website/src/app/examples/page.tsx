@@ -7,7 +7,8 @@ import {
   LightBulbIcon, 
   CommandLineIcon,
   ArrowRightIcon,
-  StarIcon
+  StarIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 const examples = [

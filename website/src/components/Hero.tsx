@@ -2,13 +2,13 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowRightIcon, ShieldCheckIcon, CpuChipIcon, LightBulbIcon } from '@heroicons/react/24/outline';
+import { ArrowRightIcon, ShieldCheckIcon, CpuChipIcon, LightBulbIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 
 export default function Hero() {
   return (
     <section className="hero-bg dark:bg-gray-900 pt-24 pb-16 lg:pt-32 lg:pb-24">
       <div className="container-custom">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -79,41 +79,53 @@ export default function Hero() {
                 <div className="text-sm text-gray-500 dark:text-gray-400">reliquary.io</div>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-start">
-                  <ShieldCheckIcon className="h-6 w-6 text-primary-500 mt-1 flex-shrink-0" />
+                  <div className="flex-shrink-0 mt-1">
+                    <ShieldCheckIcon className="h-6 w-6 text-primary-500" />
+                  </div>
                   <div className="ml-4">
                     <div className="font-medium text-gray-900 dark:text-white">Secure Vault Created</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Encrypted with post-quantum algorithms</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Encrypted with post-quantum algorithms</div>
                   </div>
                 </div>
                 
                 <div className="flex items-start">
-                  <CpuChipIcon className="h-6 w-6 text-primary-500 mt-1 flex-shrink-0" />
+                  <div className="flex-shrink-0 mt-1">
+                    <LockClosedIcon className="h-6 w-6 text-primary-500" />
+                  </div>
                   <div className="ml-4">
                     <div className="font-medium text-gray-900 dark:text-white">Context Verified</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Zero-knowledge proof validated</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Zero-knowledge proof validated</div>
                   </div>
                 </div>
                 
                 <div className="flex items-start">
-                  <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mt-1 flex-shrink-0">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="flex-shrink-0 mt-1">
+                    <CpuChipIcon className="h-6 w-6 text-primary-500" />
                   </div>
                   <div className="ml-4">
                     <div className="font-medium text-gray-900 dark:text-white">Access Granted</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Multi-agent consensus achieved</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Multi-agent consensus achieved</div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Trust Score</div>
-                  <div className="font-bold text-gray-900 dark:text-white">92.5/100</div>
-                </div>
-                <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div className="bg-primary-500 h-2 rounded-full" style={{ width: '92.5%' }}></div>
+                
+                <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Trust Score</div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-white">92.5/100</div>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2">
+                    <div 
+                      className="bg-gradient-to-r from-primary-500 to-accent-500 h-3 rounded-full" 
+                      style={{ width: '92.5%' }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>Low</span>
+                    <span className="font-medium">Excellent</span>
+                    <span>High</span>
+                  </div>
                 </div>
               </div>
             </div>

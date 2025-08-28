@@ -23,6 +23,7 @@ interface BillingPlan {
   features: string[];
   limitations: string[];
   current: boolean;
+  description: string;
 }
 
 interface Invoice {
@@ -59,7 +60,8 @@ const BILLING_PLANS: BillingPlan[] = [
       'No priority support',
       'No enterprise integrations'
     ],
-    current: false
+    current: false,
+    description: 'Perfect for developers and small projects'
   },
   {
     id: 'starter',
@@ -79,7 +81,8 @@ const BILLING_PLANS: BillingPlan[] = [
       'No custom deployment',
       'No dedicated support'
     ],
-    current: true
+    current: true,
+    description: 'For growing teams and production workloads'
   },
   {
     id: 'professional',
@@ -99,7 +102,8 @@ const BILLING_PLANS: BillingPlan[] = [
       'No custom deployment',
       'No dedicated infrastructure'
     ],
-    current: false
+    current: false,
+    description: 'For professional teams and growing businesses'
   },
   {
     id: 'enterprise',
@@ -116,7 +120,8 @@ const BILLING_PLANS: BillingPlan[] = [
       'On-premise deployment'
     ],
     limitations: [],
-    current: false
+    current: false,
+    description: 'For large organizations with advanced needs'
   }
 ];
 

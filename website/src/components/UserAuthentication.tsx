@@ -255,7 +255,7 @@ export default function UserAuthentication() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                      className="form-input w-full pl-10 pr-4 py-3"
                       placeholder="your@email.com"
                       required
                     />
@@ -274,7 +274,7 @@ export default function UserAuthentication() {
                         type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={(e) => handleInputChange('password', e.target.value)}
-                        className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                        className="form-input w-full pl-10 pr-12 py-3"
                         placeholder="Enter your password"
                         required
                       />
@@ -307,7 +307,7 @@ export default function UserAuthentication() {
                           type={showConfirmPassword ? 'text' : 'password'}
                           value={formData.confirmPassword}
                           onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                          className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          className="form-input w-full pl-10 pr-12 py-3"
                           placeholder="Confirm your password"
                           required
                         />
@@ -337,7 +337,7 @@ export default function UserAuthentication() {
                             type="text"
                             value={formData.firstName}
                             onChange={(e) => handleInputChange('firstName', e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                            className="form-input w-full pl-10 pr-4 py-3"
                             placeholder="John"
                             required
                           />
@@ -351,7 +351,7 @@ export default function UserAuthentication() {
                           type="text"
                           value={formData.lastName}
                           onChange={(e) => handleInputChange('lastName', e.target.value)}
-                          className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          className="form-input w-full pl-4 pr-4 py-3"
                           placeholder="Doe"
                           required
                         />
@@ -369,7 +369,7 @@ export default function UserAuthentication() {
                           type="text"
                           value={formData.organization}
                           onChange={(e) => handleInputChange('organization', e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          className="form-input w-full pl-10 pr-4 py-3"
                           placeholder="Your Company"
                           required
                         />
@@ -523,7 +523,7 @@ export default function UserAuthentication() {
                   <select
                     value={formData.role}
                     onChange={(e) => handleInputChange('role', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    className="form-input w-full px-4 py-3"
                   >
                     <option value="">Select organization type</option>
                     {ORGANIZATION_TYPES.map((type) => (
@@ -539,7 +539,7 @@ export default function UserAuthentication() {
                   <select
                     value={formData.role}
                     onChange={(e) => handleInputChange('role', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    className="form-input w-full px-4 py-3"
                   >
                     <option value="">Select your role</option>
                     {USER_ROLES.map((role) => (

@@ -25,6 +25,7 @@ interface DataSubjectRequest {
   response?: string;
   createdAt: string;
   resolvedAt?: string;
+  updatedAt: string;
 }
 
 interface DataBreachRecord {
@@ -116,7 +117,8 @@ class GDPRComplianceManager {
         },
         response: 'Data access request fulfilled. Personal data has been provided via secure download link.',
         createdAt: '2024-01-15T10:30:00Z',
-        resolvedAt: '2024-01-15T11:45:00Z'
+        resolvedAt: '2024-01-15T11:45:00Z',
+        updatedAt: '2024-01-15T11:45:00Z'
       }
     ];
 
