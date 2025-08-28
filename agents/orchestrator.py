@@ -25,7 +25,7 @@ from .nodes.watchdog_agent import WatchdogAgent
 from .tools.context_checker import ContextChecker
 from .tools.trust_checker import TrustChecker
 from .tools.decrypt_tool import DecryptTool
-from .memory.encrypted_memory import EncryptedMemorySystem, MemoryType
+from .memory.encrypted_memory import EncryptedMemory, MemoryType
 
 
 class DecisionType(Enum):
@@ -112,6 +112,9 @@ class DecisionOrchestrator:
             "neutral_agent", "permissive_agent", "strict_agent", "watchdog_agent"
         ]
         
+        # Initialize logger first
+        self.logger = logging.getLogger(f"orchestrator.{self.orchestrator_id}")
+        
         # Initialize consensus manager
         self.consensus_manager = DistributedConsensusManager(
             agent_id=self.orchestrator_id,
@@ -128,7 +131,7 @@ class DecisionOrchestrator:
         self.decrypt_tool = DecryptTool(agent_id=self.orchestrator_id)
         
         # Initialize memory system
-        self.memory_system = EncryptedMemorySystem(f"orchestrator_{self.orchestrator_id}")
+        self.memory_system = EncryptedMemory(f"orchestrator_{self.orchestrator_id}")
         
         # Decision tracking
         self.pending_decisions: Dict[str, DecisionRequest] = {}
@@ -147,7 +150,6 @@ class DecisionOrchestrator:
         self.default_timeout = 60.0  # seconds
         self.consensus_threshold = 0.6  # Minimum confidence for consensus
         
-        self.logger = logging.getLogger(f"orchestrator.{self.orchestrator_id}")
         self.logger.info(f"Decision orchestrator initialized with {len(self.agent_network)} agents")
     
     def _initialize_agents(self):

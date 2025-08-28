@@ -1,0 +1,80 @@
+# Multi-stage Dockerfile for ReliQuary Platform
+FROM python:3.11-slim as base
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    libpq-dev \
+    libssl-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create application user
+RUN groupadd -r reliquary && useradd -r -g reliquary reliquary
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt requirements-prod.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements-prod.txt
+
+# Copy Rust modules
+COPY rust_modules/ ./rust_modules/
+
+# Copy application code
+COPY --chown=reliquary:reliquary . .
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/data /app/config && \
+    chown -R reliquary:reliquary /app
+
+# Remove development files
+RUN rm -rf tests/ docs/ .git/ .github/ deployment/ *.md
+
+# Switch to non-root user
+USER reliquary
+
+# Expose ports
+EXPOSE 8000 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Default command
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+
+# Production stage
+FROM base as production
+
+# Copy production configuration
+COPY deployment/config/production.yaml /app/config/app.yaml
+
+# Set production environment
+ENV ENVIRONMENT=production \
+    LOG_LEVEL=INFO
+
+# Agent Orchestrator Image
+FROM base as agent-orchestrator
+
+# Install additional dependencies for agent orchestrator
+RUN pip install --no-cache-dir langgraph langchain transformers torch
+
+# Copy agent-specific configuration
+COPY deployment/config/agent-orchestrator.yaml /app/config/agent.yaml
+
+# Expose agent orchestrator port
+EXPOSE 8001
+
+# Agent orchestrator command
+CMD ["python", "-m", "uvicorn", "consensus.agent_orchestrator_service:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]

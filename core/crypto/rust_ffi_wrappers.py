@@ -229,6 +229,28 @@ def verify_falcon_rust(message: bytes, signature: bytes, public_key: bytes) -> b
     """Verifies a message signature using Falcon public key."""
     return crypto_module.verify_falcon(list(message), list(signature), list(public_key))
 
+# --- Generic Key Generation Functions for Backward Compatibility ---
+
+def generate_keypair_rust() -> tuple[bytes, bytes]:
+    """Generate a generic keypair using Kyber post-quantum algorithm."""
+    return generate_kyber_keys_rust()
+
+def derive_key_rust(shared_secret: bytes, info: bytes = b"") -> bytes:
+    """Derive a key from shared secret using HKDF-SHA256."""
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+    from cryptography.hazmat.backends import default_backend
+    
+    # Use HKDF to derive a 32-byte key
+    hkdf = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=None,
+        info=info,
+        backend=default_backend()
+    )
+    return hkdf.derive(shared_secret)
+
 # --- Merkle Tree Functions ---
 
 def create_merkle_root_rust(data_blocks: list[bytes]) -> bytes:

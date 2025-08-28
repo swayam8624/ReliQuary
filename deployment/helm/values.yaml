@@ -1,0 +1,274 @@
+# Default values for ReliQuary Platform Helm Chart
+global:
+  imageRegistry: "registry.reliquary.io"
+  storageClass: "fast-ssd"
+  namespace: "reliquary"
+
+# Application configuration
+app:
+  name: reliquary-platform
+  version: "5.0.0"
+  environment: production
+  logLevel: INFO
+
+# Container images
+image:
+  platform:
+    repository: reliquary/platform
+    tag: "v5.0.0"
+    pullPolicy: IfNotPresent
+  agentOrchestrator:
+    repository: reliquary/agent-orchestrator
+    tag: "v5.0.0"
+    pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    http: 80
+    metrics: 8080
+    agents: 8001
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: api.reliquary.io
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: platform.reliquary.io
+      paths:
+        - path: /
+          pathType: Prefix
+        - path: /agents
+          pathType: Prefix
+  tls:
+    - secretName: reliquary-tls-cert
+      hosts:
+        - api.reliquary.io
+        - platform.reliquary.io
+
+# Deployment configuration
+deployment:
+  replicaCount: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+# Resource configuration
+resources:
+  platform:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  agentOrchestrator:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+
+# Autoscaling configuration
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Security configuration
+security:
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    fsGroup: 10001
+  networkPolicy:
+    enabled: true
+  rbac:
+    create: true
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    database: reliquary
+    username: reliquary_user
+    password: "postgresql_secure_password"
+  primary:
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: "fast-ssd"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+
+# Redis configuration
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "fast-ssd"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+
+# Monitoring configuration
+monitoring:
+  prometheus:
+    enabled: true
+    server:
+      persistentVolume:
+        enabled: true
+        size: 100Gi
+        storageClass: "fast-ssd"
+      resources:
+        requests:
+          memory: "1Gi"
+          cpu: "500m"
+        limits:
+          memory: "4Gi"
+          cpu: "2000m"
+
+  grafana:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "fast-ssd"
+    adminPassword: "grafana_admin_password"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+
+  jaeger:
+    enabled: true
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+
+  influxdb:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: "fast-ssd"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+
+# Application-specific configuration
+config:
+  server:
+    host: "0.0.0.0"
+    port: 8000
+    workers: 4
+
+  security:
+    enableCors: true
+    corsOrigins: ["https://*.reliquary.io"]
+    rateLimiting:
+      enabled: true
+      maxRequests: 1000
+      windowSeconds: 60
+
+  consensus:
+    networkSize: 100
+    byzantineTolerance: 33
+    timeoutSeconds: 30
+    retryAttempts: 3
+
+  observability:
+    telemetryLevel: "standard"
+    enableTracing: true
+    enableMetrics: true
+    enableLogging: true
+    samplingRate: 0.1
+
+  quantum:
+    enablePqc: true
+    algorithms: ["kyber", "dilithium"]
+    keyRotationHours: 24
+
+  aiMl:
+    enableIntelligence: true
+    modelUpdateInterval: 3600
+    trustThreshold: 0.8
+
+  crosschain:
+    enableBridges: true
+    supportedNetworks: ["ethereum", "polygon", "cosmos"]
+    confirmationBlocks: 12
+
+# Secrets configuration (Base64 encoded)
+secrets:
+  jwtSecretKey: "c3VwZXItc2VjdXJlLWp3dC1rZXktZm9yLXByb2R1Y3Rpb24="
+  encryptionKey: "YWVzLTI1Ni1lbmNyeXB0aW9uLWtleS1mb3ItcHJvZHVjdGlvbg=="
+  influxdbToken: "aW5mbHV4ZGItYWNjZXNzLXRva2VuLWZvci1yZWxpcXVhcnk="
+
+# Environment variables
+env:
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  PROMETHEUS_ENDPOINT: "http://prometheus:9090"
+  JAEGER_ENDPOINT: "http://jaeger-collector:14268/api/traces"
+  INFLUXDB_URL: "http://influxdb:8086"
+  INFLUXDB_ORG: "reliquary"
+  INFLUXDB_BUCKET: "metrics"
+
+# Node affinity and tolerations
+nodeSelector: {}
+
+tolerations:
+  - key: "reliquary.io/dedicated"
+    operator: "Equal"
+    value: "platform"
+    effect: "NoSchedule"
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: reliquary-platform
+          topologyKey: kubernetes.io/hostname

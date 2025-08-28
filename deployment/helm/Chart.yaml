@@ -1,0 +1,44 @@
+apiVersion: v2
+name: reliquary-platform
+description: Enterprise-grade multi-agent consensus platform with quantum-resistant security
+type: application
+version: 5.0.0
+appVersion: "5.0.0"
+
+keywords:
+  - consensus
+  - multi-agent
+  - quantum-resistant
+  - security
+  - enterprise
+
+home: https://reliquary.io
+sources:
+  - https://github.com/reliquary/platform
+
+maintainers:
+  - name: ReliQuary Team
+    email: platform@reliquary.io
+
+dependencies:
+  - name: postgresql
+    version: "12.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: "17.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: prometheus
+    version: "15.x.x"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: monitoring.prometheus.enabled
+  - name: grafana
+    version: "6.x.x"
+    repository: https://grafana.github.io/helm-charts
+    condition: monitoring.grafana.enabled
+
+annotations:
+  category: Platform
+  security.policy: strict
+  deployment.environment: production

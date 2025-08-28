@@ -1,0 +1,514 @@
+name: ReliQuary Platform CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, "release/*"]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: reliquary/platform
+  AGENT_IMAGE_NAME: reliquary/agent-orchestrator
+
+jobs:
+  # Security and Code Quality Checks
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install security tools
+        run: |
+          pip install bandit safety semgrep
+
+      - name: Run Bandit security scan
+        run: |
+          bandit -r . -f json -o bandit-report.json || true
+
+      - name: Run Safety check
+        run: |
+          safety check --json --output safety-report.json || true
+
+      - name: Run Semgrep
+        run: |
+          semgrep --config=auto --json --output=semgrep-report.json . || true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            safety-report.json
+            semgrep-report.json
+
+  # Rust Components Build and Test
+  rust-build:
+    name: Build and Test Rust Components
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Format check
+        run: cargo fmt -- --check
+
+      - name: Clippy check
+        run: cargo clippy -- -D warnings
+
+      - name: Build Rust modules
+        run: |
+          cd rust_modules/post_quantum_crypto && cargo build --release
+          cd ../merkle_tree && cargo build --release
+
+      - name: Test Rust modules
+        run: |
+          cd rust_modules/post_quantum_crypto && cargo test
+          cd ../merkle_tree && cargo test
+
+      - name: Upload Rust artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: rust-modules
+          path: |
+            rust_modules/*/target/release/*.so
+            rust_modules/*/target/release/*.dylib
+
+  # Python Application Tests
+  python-tests:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Install Rust modules (simulation mode)
+        run: |
+          # Create dummy Rust modules for CI testing
+          mkdir -p rust_modules/lib
+          touch rust_modules/lib/libpost_quantum_crypto.so
+          touch rust_modules/lib/libmerkle_tree.so
+
+      - name: Run linting
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          black --check .
+          isort --check-only .
+
+      - name: Run type checking
+        run: mypy . --ignore-missing-imports
+
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --cov=. --cov-report=xml --cov-report=html
+
+      - name: Upload test coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-python-${{ matrix.python-version }}
+          path: |
+            htmlcov/
+            pytest-report.xml
+
+  # Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [rust-build, python-tests]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: reliquary_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Download Rust modules
+        uses: actions/download-artifact@v3
+        with:
+          name: rust-modules
+          path: rust_modules/
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/reliquary_test
+          REDIS_URL: redis://localhost:6379
+          ENVIRONMENT: test
+        run: |
+          pytest tests/integration/ -v --maxfail=5
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-results
+          path: integration-test-report.xml
+
+  # Docker Build and Push
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [security-scan, rust-build, python-tests, integration-tests]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download Rust modules
+        uses: actions/download-artifact@v3
+        with:
+          name: rust-modules
+          path: rust_modules/
+
+      - name: Extract metadata for platform image
+        id: meta-platform
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
+      - name: Extract metadata for agent orchestrator image
+        id: meta-agent
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.AGENT_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
+      - name: Build and push platform image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.platform
+          push: true
+          tags: ${{ steps.meta-platform.outputs.tags }}
+          labels: ${{ steps.meta-platform.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push agent orchestrator image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.agent-orchestrator
+          push: true
+          tags: ${{ steps.meta-agent.outputs.tags }}
+          labels: ${{ steps.meta-agent.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # Infrastructure Validation
+  terraform-validate:
+    name: Terraform Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ~1.5
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive deployment/terraform/
+
+      - name: Terraform Init
+        run: |
+          cd deployment/terraform
+          terraform init -backend=false
+
+      - name: Terraform Validate
+        run: |
+          cd deployment/terraform
+          terraform validate
+
+      - name: Terraform Plan (Dry Run)
+        run: |
+          cd deployment/terraform
+          terraform plan -out=tfplan
+
+  # Helm Chart Validation
+  helm-validate:
+    name: Helm Chart Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "3.12.0"
+
+      - name: Lint Helm Chart
+        run: |
+          cd deployment/helm
+          helm lint .
+
+      - name: Template Helm Chart
+        run: |
+          cd deployment/helm
+          helm template reliquary . --values values.yaml
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-and-push, terraform-validate, helm-validate]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region us-west-2 --name reliquary-staging
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "3.12.0"
+
+      - name: Deploy to staging
+        run: |
+          cd deployment/helm
+          helm upgrade --install reliquary-staging . \
+            --namespace reliquary-staging --create-namespace \
+            --values values.yaml \
+            --values values-staging.yaml \
+            --set image.platform.tag=${{ github.sha }} \
+            --set image.agentOrchestrator.tag=${{ github.sha }} \
+            --wait --timeout=15m
+
+      - name: Run smoke tests
+        run: |
+          kubectl wait --for=condition=ready pod -l app=reliquary-platform -n reliquary-staging --timeout=300s
+          curl -f https://api-staging.reliquary.io/health || exit 1
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-and-push, terraform-validate, helm-validate]
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: us-west-2
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region us-west-2 --name reliquary-production
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "3.12.0"
+
+      - name: Deploy to production
+        run: |
+          cd deployment/helm
+          helm upgrade --install reliquary . \
+            --namespace reliquary --create-namespace \
+            --values values.yaml \
+            --values values-production.yaml \
+            --set image.platform.tag=${GITHUB_REF#refs/tags/} \
+            --set image.agentOrchestrator.tag=${GITHUB_REF#refs/tags/} \
+            --wait --timeout=20m
+
+      - name: Run production health checks
+        run: |
+          kubectl wait --for=condition=ready pod -l app=reliquary-platform -n reliquary --timeout=600s
+          curl -f https://api.reliquary.io/health || exit 1
+          curl -f https://platform.reliquary.io/status || exit 1
+
+      - name: Notify deployment success
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: "✅ ReliQuary v${GITHUB_REF#refs/tags/} successfully deployed to production!"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Performance Tests
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install performance testing tools
+        run: |
+          pip install locust requests
+
+      - name: Run load tests
+        run: |
+          locust -f tests/performance/locustfile.py \
+            --host https://api-staging.reliquary.io \
+            --users 100 --spawn-rate 10 \
+            --run-time 5m --headless \
+            --html performance-report.html
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-test-results
+          path: performance-report.html
+
+  # Security Tests
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          target: "https://api-staging.reliquary.io"
+          rules_file_name: ".zap/rules.tsv"
+          cmd_options: "-a"
+
+      - name: Upload ZAP results
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-security-scan
+          path: report_html.html

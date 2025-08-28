@@ -25,8 +25,8 @@ from core.crypto.rust_ffi_wrappers import (
     encrypt_data_rust,
     decrypt_data_rust,
     generate_kyber_keys_rust,
-    kyber_encapsulate_rust,
-    kyber_decapsulate_rust
+    encapsulate_kyber_rust,
+    decapsulate_kyber_rust
 )
 
 
@@ -135,9 +135,7 @@ class EncryptedMemory:
             
             # Generate post-quantum keys
             try:
-                kyber_keys = generate_kyber_keys_rust()
-                self.kyber_public_key = kyber_keys["public_key"]
-                self.kyber_private_key = kyber_keys["private_key"]
+                self.kyber_public_key, self.kyber_private_key = generate_kyber_keys_rust()
                 self.post_quantum_enabled = True
                 self.logger.info("Post-quantum encryption enabled")
             except Exception as e:
@@ -370,21 +368,23 @@ class EncryptedMemory:
             if level == EncryptionLevel.STANDARD:
                 # Standard AES encryption
                 key = self.encryption_keys[level]
-                return encrypt_data_rust(data, key)
+                ciphertext, nonce = encrypt_data_rust(data, key)
+                # Combine ciphertext and nonce for storage
+                return nonce + b":NONCE_SEP:" + ciphertext
             
             elif level == EncryptionLevel.HIGH and self.post_quantum_enabled:
                 # Post-quantum + AES encryption
                 # First encrypt with AES
                 aes_key = self.encryption_keys[EncryptionLevel.STANDARD]
-                aes_encrypted = encrypt_data_rust(data, aes_key)
+                aes_ciphertext, aes_nonce = encrypt_data_rust(data, aes_key)
+                aes_encrypted = aes_nonce + b":NONCE_SEP:" + aes_ciphertext
                 
                 # Then add post-quantum layer
-                pq_result = kyber_encapsulate_rust(self.kyber_public_key)
-                pq_key = pq_result["shared_secret"]
-                pq_ciphertext = pq_result["ciphertext"]
+                pq_ciphertext, pq_key = encapsulate_kyber_rust(self.kyber_public_key)
                 
                 # Encrypt AES result with PQ key
-                final_encrypted = encrypt_data_rust(aes_encrypted, pq_key)
+                final_ciphertext, final_nonce = encrypt_data_rust(aes_encrypted, pq_key)
+                final_encrypted = final_nonce + b":NONCE_SEP:" + final_ciphertext
                 
                 # Combine PQ ciphertext with final encrypted data
                 return pq_ciphertext + b":PQ_SEPARATOR:" + final_encrypted
@@ -396,12 +396,14 @@ class EncryptedMemory:
                 
                 # Add additional layer with different key
                 max_key = self.encryption_keys[level]
-                return encrypt_data_rust(high_encrypted, max_key)
+                max_ciphertext, max_nonce = encrypt_data_rust(high_encrypted, max_key)
+                return max_nonce + b":NONCE_SEP:" + max_ciphertext
             
             else:
                 # Fallback to standard
                 key = self.encryption_keys[EncryptionLevel.STANDARD]
-                return encrypt_data_rust(data, key)
+                ciphertext, nonce = encrypt_data_rust(data, key)
+                return nonce + b":NONCE_SEP:" + ciphertext
         
         except Exception as e:
             self.logger.error(f"Encryption failed: {e}")
@@ -413,7 +415,12 @@ class EncryptedMemory:
             if level == EncryptionLevel.STANDARD:
                 # Standard AES decryption
                 key = self.encryption_keys[level]
-                return decrypt_data_rust(encrypted_data, key)
+                # Split nonce and ciphertext
+                parts = encrypted_data.split(b":NONCE_SEP:")
+                if len(parts) != 2:
+                    raise ValueError("Invalid encrypted data format")
+                nonce, ciphertext = parts
+                return decrypt_data_rust(ciphertext, nonce, key)
             
             elif level == EncryptionLevel.HIGH and self.post_quantum_enabled:
                 # Post-quantum + AES decryption
@@ -424,21 +431,38 @@ class EncryptedMemory:
                 
                 pq_ciphertext, final_encrypted = parts
                 
+                # Split nonce and ciphertext for final encryption
+                final_parts = final_encrypted.split(b":NONCE_SEP:")
+                if len(final_parts) != 2:
+                    raise ValueError("Invalid final encrypted data format")
+                final_nonce, final_ciphertext = final_parts
+                
                 # Decapsulate post-quantum key
-                pq_key = kyber_decapsulate_rust(self.kyber_private_key, pq_ciphertext)
+                pq_key = decapsulate_kyber_rust(pq_ciphertext, self.kyber_private_key)
                 
                 # Decrypt with PQ key
-                aes_encrypted = decrypt_data_rust(final_encrypted, pq_key)
+                aes_encrypted = decrypt_data_rust(final_ciphertext, final_nonce, pq_key)
+                
+                # Split nonce and ciphertext for AES encryption
+                aes_parts = aes_encrypted.split(b":NONCE_SEP:")
+                if len(aes_parts) != 2:
+                    raise ValueError("Invalid AES encrypted data format")
+                aes_nonce, aes_ciphertext = aes_parts
                 
                 # Decrypt with AES key
                 aes_key = self.encryption_keys[EncryptionLevel.STANDARD]
-                return decrypt_data_rust(aes_encrypted, aes_key)
+                return decrypt_data_rust(aes_ciphertext, aes_nonce, aes_key)
             
             elif level == EncryptionLevel.MAXIMUM:
                 # Multi-layer decryption
                 # Remove maximum layer first
                 max_key = self.encryption_keys[level]
-                high_encrypted = decrypt_data_rust(encrypted_data, max_key)
+                # Split nonce and ciphertext for maximum encryption
+                max_parts = encrypted_data.split(b":NONCE_SEP:")
+                if len(max_parts) != 2:
+                    raise ValueError("Invalid maximum encrypted data format")
+                max_nonce, max_ciphertext = max_parts
+                high_encrypted = decrypt_data_rust(max_ciphertext, max_nonce, max_key)
                 
                 # Decrypt HIGH level
                 return await self._decrypt_data(high_encrypted, EncryptionLevel.HIGH)
@@ -446,7 +470,12 @@ class EncryptedMemory:
             else:
                 # Fallback to standard
                 key = self.encryption_keys[EncryptionLevel.STANDARD]
-                return decrypt_data_rust(encrypted_data, key)
+                # Split nonce and ciphertext
+                parts = encrypted_data.split(b":NONCE_SEP:")
+                if len(parts) != 2:
+                    raise ValueError("Invalid encrypted data format")
+                nonce, ciphertext = parts
+                return decrypt_data_rust(ciphertext, nonce, key)
         
         except Exception as e:
             self.logger.error(f"Decryption failed: {e}")

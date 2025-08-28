@@ -1,0 +1,205 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: reliquary
+  labels:
+    name: reliquary
+    security.policy: strict
+    monitoring: enabled
+  annotations:
+    description: "ReliQuary production namespace"
+    team: "platform-engineering"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: reliquary-service-account
+  namespace: reliquary
+  labels:
+    app: reliquary
+    component: service-account
+  annotations:
+    description: "Service account for ReliQuary platform components"
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: reliquary-role
+  namespace: reliquary
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: reliquary-rolebinding
+  namespace: reliquary
+subjects:
+  - kind: ServiceAccount
+    name: reliquary-service-account
+    namespace: reliquary
+roleRef:
+  kind: Role
+  name: reliquary-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: reliquary-secrets
+  namespace: reliquary
+  labels:
+    app: reliquary
+    component: secrets
+type: Opaque
+data:
+  # Base64 encoded secrets - replace with actual values in production
+  database-url: cG9zdGdyZXNxbDovL3VzZXI6cGFzc0Bwb3N0Z3Jlczo1NDMyL3JlbGlxdWFyeQ==
+  redis-url: cmVkaXM6Ly9yZWRpczozNjM3
+  jwt-secret-key: c3VwZXItc2VjdXJlLWp3dC1rZXktZm9yLXByb2R1Y3Rpb24=
+  encryption-key: YWVzLTI1Ni1lbmNyeXB0aW9uLWtleS1mb3ItcHJvZHVjdGlvbg==
+  influxdb-token: aW5mbHV4ZGItYWNjZXNzLXRva2VuLWZvci1yZWxpcXVhcnk=
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reliquary-config
+  namespace: reliquary
+  labels:
+    app: reliquary
+    component: config
+data:
+  app_config.yaml: |
+    environment: production
+    log_level: INFO
+    server:
+      host: "0.0.0.0"
+      port: 8000
+      workers: 4
+    security:
+      enable_cors: true
+      cors_origins: ["https://*.reliquary.io"]
+      rate_limiting:
+        enabled: true
+        max_requests: 1000
+        window_seconds: 60
+    consensus:
+      network_size: 100
+      byzantine_tolerance: 33
+      timeout_seconds: 30
+      retry_attempts: 3
+    observability:
+      telemetry_level: "standard"
+      enable_tracing: true
+      enable_metrics: true
+      enable_logging: true
+      sampling_rate: 0.1
+    quantum:
+      enable_pqc: true
+      algorithms: ["kyber", "dilithium"]
+      key_rotation_hours: 24
+    ai_ml:
+      enable_intelligence: true
+      model_update_interval: 3600
+      trust_threshold: 0.8
+    crosschain:
+      enable_bridges: true
+      supported_networks: ["ethereum", "polygon", "cosmos"]
+      confirmation_blocks: 12
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reliquary-rust-modules
+  namespace: reliquary
+  labels:
+    app: reliquary
+    component: rust-modules
+binaryData:
+  # These would be the compiled Rust modules
+  # libpost_quantum_crypto.so: <binary data>
+  # libmerkle_tree.so: <binary data>
+data:
+  module_manifest.json: |
+    {
+      "modules": [
+        {
+          "name": "post_quantum_crypto",
+          "version": "1.0.0",
+          "path": "libpost_quantum_crypto.so",
+          "checksum": "sha256:..."
+        },
+        {
+          "name": "merkle_tree", 
+          "version": "1.0.0",
+          "path": "libmerkle_tree.so",
+          "checksum": "sha256:..."
+        }
+      ]
+    }
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: reliquary-network-policy
+  namespace: reliquary
+spec:
+  podSelector:
+    matchLabels:
+      app: reliquary-platform
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: reliquary
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: reliquary
+      ports:
+        - protocol: TCP
+          port: 5432 # PostgreSQL
+        - protocol: TCP
+          port: 6379 # Redis
+        - protocol: TCP
+          port: 8086 # InfluxDB
+    - to: [] # Allow external access for cross-chain operations
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80

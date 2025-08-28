@@ -17,11 +17,11 @@ import uuid
 from datetime import datetime
 
 try:
-    from langgraph.graph import StateGraph, END
+    from langgraph.graph import StateGraph, END, START
     from langgraph.graph.message import AnyMessage, add_messages
     from langgraph.prebuilt import ToolNode
     from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
-    from langchain_core.pydantic_v1 import BaseModel, Field
+    from pydantic import BaseModel, Field
 except ImportError:
     # Fallback for development without LangGraph
     logging.warning("LangGraph not available, using fallback implementations")
@@ -57,6 +57,7 @@ except ImportError:
     class SystemMessage(BaseMessage): pass
     
     END = "__END__"
+    START = "__START__"
 
 
 class WorkflowPhase(Enum):
@@ -257,6 +258,7 @@ class AgentWorkflowCoordinator:
         workflow.add_node("completion", self._complete_workflow)
         
         # Add workflow edges
+        workflow.add_edge(START, "initialization")  # Add entrypoint from START
         workflow.add_edge("initialization", "context_analysis")
         workflow.add_edge("context_analysis", "agent_evaluation")
         workflow.add_edge("agent_evaluation", "consensus_building")

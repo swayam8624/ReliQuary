@@ -44,3 +44,17 @@
 {"event": "api_startup", "status": "success", "timestamp": "2025-08-27T21:10:33.034234Z", "version": "0.1.0"}
 {"event": "api_shutdown", "status": "success", "timestamp": "2025-08-27T21:10:34.551966Z"}
 {"event": "api_startup", "status": "success", "timestamp": "2025-08-27T21:10:35.059269Z", "version": "0.1.0"}
+{"event": "health_check", "status": "healthy", "timestamp": "2025-08-28T00:57:06.110290Z", "type": "detailed"}
+{"event": "log_summary_access", "status": "success", "timestamp": "2025-08-28T00:57:06.116652Z"}
+{"event": "log_summary_access", "status": "success", "timestamp": "2025-08-28T00:57:06.119915Z"}
+{"entry_index": 0, "event": "log_verification", "status": "success", "timestamp": "2025-08-28T00:57:06.122904Z", "verified": true}
+{"event": "log_summary_access", "status": "success", "timestamp": "2025-08-28T00:57:06.128444Z"}
+{"event": "log_summary_access", "status": "success", "timestamp": "2025-08-28T00:57:06.134651Z"}
+{"event": "api_shutdown", "status": "success", "timestamp": "2025-08-28T06:38:33.980939Z"}
+{"event": "api_startup", "status": "success", "timestamp": "2025-08-28T06:38:34.804627Z", "version": "0.1.0"}
+{"event": "health_check", "status": "healthy", "timestamp": "2025-08-28T07:03:02.282467Z", "type": "detailed"}
+{"event": "log_summary_access", "status": "success", "timestamp": "2025-08-28T07:03:02.289148Z"}
+{"event": "log_summary_access", "status": "success", "timestamp": "2025-08-28T07:03:02.292850Z"}
+{"entry_index": 0, "event": "log_verification", "status": "success", "timestamp": "2025-08-28T07:03:02.296020Z", "verified": true}
+{"event": "log_summary_access", "status": "success", "timestamp": "2025-08-28T07:03:02.301480Z"}
+{"event": "log_summary_access", "status": "success", "timestamp": "2025-08-28T07:03:02.307254Z"}

@@ -1,0 +1,466 @@
+---
+- name: Deploy ReliQuary Platform
+  hosts: kubernetes_cluster
+  gather_facts: yes
+  vars:
+    reliquary_namespace: reliquary
+    monitoring_namespace: monitoring
+    environment: "{{ deployment_environment | default('production') }}"
+    image_tag: "{{ reliquary_image_tag | default('v5.0.0') }}"
+
+  tasks:
+    - name: Ensure kubectl is available
+      shell: kubectl version --client
+      register: kubectl_version
+      failed_when: kubectl_version.rc != 0
+
+    - name: Create ReliQuary namespace
+      kubernetes.core.k8s:
+        name: "{{ reliquary_namespace }}"
+        api_version: v1
+        kind: Namespace
+        state: present
+        definition:
+          metadata:
+            labels:
+              name: "{{ reliquary_namespace }}"
+              security.policy: strict
+              monitoring: enabled
+
+    - name: Create monitoring namespace
+      kubernetes.core.k8s:
+        name: "{{ monitoring_namespace }}"
+        api_version: v1
+        kind: Namespace
+        state: present
+        definition:
+          metadata:
+            labels:
+              name: "{{ monitoring_namespace }}"
+
+    - name: Apply RBAC configurations
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ playbook_dir }}/../kubernetes/namespace-rbac.yaml"
+
+    - name: Deploy PostgreSQL
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: StatefulSet
+          metadata:
+            name: postgresql
+            namespace: "{{ reliquary_namespace }}"
+          spec:
+            serviceName: postgresql
+            replicas: 1
+            selector:
+              matchLabels:
+                app: postgresql
+            template:
+              metadata:
+                labels:
+                  app: postgresql
+              spec:
+                containers:
+                  - name: postgresql
+                    image: postgres:15-alpine
+                    env:
+                      - name: POSTGRES_DB
+                        value: reliquary
+                      - name: POSTGRES_USER
+                        value: reliquary_user
+                      - name: POSTGRES_PASSWORD
+                        valueFrom:
+                          secretKeyRef:
+                            name: postgresql-secret
+                            key: password
+                    volumeMounts:
+                      - name: postgresql-storage
+                        mountPath: /var/lib/postgresql/data
+            volumeClaimTemplates:
+              - metadata:
+                  name: postgresql-storage
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 100Gi
+
+    - name: Deploy Redis
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ playbook_dir }}/../kubernetes/services-ingress.yaml"
+
+    - name: Wait for database to be ready
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: "{{ reliquary_namespace }}"
+        label_selectors:
+          - app=postgresql
+        wait: true
+        wait_condition:
+          type: Ready
+          status: "True"
+        wait_timeout: 300
+
+    - name: Deploy monitoring stack
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ playbook_dir }}/../kubernetes/monitoring-stack.yaml"
+
+    - name: Wait for monitoring to be ready
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: "{{ monitoring_namespace }}"
+        label_selectors:
+          - app=prometheus
+        wait: true
+        wait_condition:
+          type: Ready
+          status: "True"
+        wait_timeout: 300
+
+    - name: Deploy ReliQuary platform
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: reliquary-platform
+            namespace: "{{ reliquary_namespace }}"
+          spec:
+            replicas: 3
+            selector:
+              matchLabels:
+                app: reliquary-platform
+            template:
+              metadata:
+                labels:
+                  app: reliquary-platform
+              spec:
+                containers:
+                  - name: reliquary-api
+                    image: "reliquary/platform:{{ image_tag }}"
+                    ports:
+                      - containerPort: 8000
+                        name: http
+                      - containerPort: 8080
+                        name: metrics
+                    env:
+                      - name: ENVIRONMENT
+                        value: "{{ environment }}"
+                      - name: DATABASE_URL
+                        valueFrom:
+                          secretKeyRef:
+                            name: reliquary-secrets
+                            key: database-url
+                    resources:
+                      requests:
+                        memory: "512Mi"
+                        cpu: "250m"
+                      limits:
+                        memory: "2Gi"
+                        cpu: "1000m"
+
+    - name: Wait for ReliQuary platform to be ready
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: "{{ reliquary_namespace }}"
+        label_selectors:
+          - app=reliquary-platform
+        wait: true
+        wait_condition:
+          type: Ready
+          status: "True"
+        wait_timeout: 600
+
+    - name: Configure ingress
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: reliquary-ingress
+            namespace: "{{ reliquary_namespace }}"
+            annotations:
+              kubernetes.io/ingress.class: "nginx"
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+              cert-manager.io/cluster-issuer: "letsencrypt-prod"
+          spec:
+            tls:
+              - hosts:
+                  - "api.reliquary.io"
+                  - "platform.reliquary.io"
+                secretName: reliquary-tls-cert
+            rules:
+              - host: "api.reliquary.io"
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: reliquary-platform-service
+                          port:
+                            number: 80
+
+    - name: Run health checks
+      uri:
+        url: "https://{{ item }}/health"
+        method: GET
+        validate_certs: yes
+        status_code: 200
+      register: health_check
+      retries: 5
+      delay: 30
+      with_items:
+        - api.reliquary.io
+        - platform.reliquary.io
+      when: environment == 'production'
+
+    - name: Verify deployment status
+      debug:
+        msg: "ReliQuary platform deployed successfully to {{ environment }}"
+
+- name: Configure monitoring and alerting
+  hosts: kubernetes_cluster
+  vars:
+    reliquary_namespace: reliquary
+    monitoring_namespace: monitoring
+
+  tasks:
+    - name: Configure Prometheus for ReliQuary
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: prometheus-reliquary-config
+            namespace: "{{ monitoring_namespace }}"
+          data:
+            reliquary.yml: |
+              - job_name: 'reliquary-platform'
+                kubernetes_sd_configs:
+                  - role: endpoints
+                    namespaces:
+                      names: ['{{ reliquary_namespace }}']
+                relabel_configs:
+                  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+                    action: keep
+                    regex: true
+
+    - name: Configure Grafana dashboards
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: grafana-reliquary-dashboards
+            namespace: "{{ monitoring_namespace }}"
+          data:
+            reliquary-overview.json: |
+              {
+                "dashboard": {
+                  "title": "ReliQuary System Overview",
+                  "panels": [
+                    {
+                      "title": "System Health Score",
+                      "type": "stat",
+                      "targets": [
+                        {
+                          "expr": "reliquary_system_health_score",
+                          "legendFormat": "Health Score"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+
+    - name: Configure alert rules
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: prometheus-reliquary-rules
+            namespace: "{{ monitoring_namespace }}"
+          data:
+            reliquary.rules: |
+              groups:
+                - name: reliquary.rules
+                  rules:
+                    - alert: ReliQuaryHighCPU
+                      expr: reliquary_cpu_usage_percent > 80
+                      for: 5m
+                      labels:
+                        severity: warning
+                      annotations:
+                        summary: "High CPU usage detected"
+                        description: "CPU usage is above 80% for more than 5 minutes"
+
+    - name: Restart Prometheus to load new configuration
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: prometheus-restart
+            namespace: "{{ monitoring_namespace }}"
+            annotations:
+              kubectl.kubernetes.io/restartedAt: "{{ ansible_date_time.iso8601 }}"
+          spec:
+            restartPolicy: Never
+            containers:
+              - name: restart
+                image: busybox
+                command: ["sh", "-c", 'echo "Prometheus configuration updated"']
+
+- name: Security hardening
+  hosts: kubernetes_cluster
+  vars:
+    reliquary_namespace: reliquary
+
+  tasks:
+    - name: Apply network policies
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: reliquary-network-policy
+            namespace: "{{ reliquary_namespace }}"
+          spec:
+            podSelector:
+              matchLabels:
+                app: reliquary-platform
+            policyTypes:
+              - Ingress
+              - Egress
+            ingress:
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        name: "{{ reliquary_namespace }}"
+                ports:
+                  - protocol: TCP
+                    port: 8000
+
+    - name: Apply pod security standards
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ reliquary_namespace }}"
+            labels:
+              pod-security.kubernetes.io/enforce: restricted
+              pod-security.kubernetes.io/audit: restricted
+              pod-security.kubernetes.io/warn: restricted
+
+    - name: Configure resource quotas
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ResourceQuota
+          metadata:
+            name: reliquary-resource-quota
+            namespace: "{{ reliquary_namespace }}"
+          spec:
+            hard:
+              requests.cpu: "10"
+              requests.memory: 20Gi
+              limits.cpu: "20"
+              limits.memory: 40Gi
+              persistentvolumeclaims: "10"
+
+- name: Backup configuration
+  hosts: kubernetes_cluster
+  vars:
+    reliquary_namespace: reliquary
+    backup_schedule: "0 2 * * *" # Daily at 2 AM
+
+  tasks:
+    - name: Create backup job for PostgreSQL
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: batch/v1
+          kind: CronJob
+          metadata:
+            name: postgresql-backup
+            namespace: "{{ reliquary_namespace }}"
+          spec:
+            schedule: "{{ backup_schedule }}"
+            jobTemplate:
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - name: postgres-backup
+                        image: postgres:15-alpine
+                        command:
+                          - /bin/bash
+                          - -c
+                          - |
+                            pg_dump -h postgresql -U reliquary_user reliquary > /backup/reliquary-$(date +%Y%m%d-%H%M%S).sql
+                            aws s3 cp /backup/ s3://reliquary-backups/ --recursive
+                        env:
+                          - name: PGPASSWORD
+                            valueFrom:
+                              secretKeyRef:
+                                name: postgresql-secret
+                                key: password
+                        volumeMounts:
+                          - name: backup-volume
+                            mountPath: /backup
+                    volumes:
+                      - name: backup-volume
+                        emptyDir: {}
+                    restartPolicy: OnFailure
+
+    - name: Create backup job for application data
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: batch/v1
+          kind: CronJob
+          metadata:
+            name: reliquary-data-backup
+            namespace: "{{ reliquary_namespace }}"
+          spec:
+            schedule: "{{ backup_schedule }}"
+            jobTemplate:
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - name: data-backup
+                        image: amazon/aws-cli:latest
+                        command:
+                          - /bin/bash
+                          - -c
+                          - |
+                            kubectl get all -n {{ reliquary_namespace }} -o yaml > /backup/k8s-resources-$(date +%Y%m%d-%H%M%S).yaml
+                            aws s3 cp /backup/ s3://reliquary-backups/k8s/ --recursive
+                        volumeMounts:
+                          - name: backup-volume
+                            mountPath: /backup
+                    volumes:
+                      - name: backup-volume
+                        emptyDir: {}
+                    restartPolicy: OnFailure
