@@ -122,7 +122,9 @@ For self-hosted deployments, you can use either Docker Compose or Kubernetes man
 
 ## Website
 
-The official website is built with Next.js and can be deployed to Vercel. Pre-built Docker images are also available for self-hosted deployments.
+The official website is built with Next.js and is deployed on Vercel at: https://reliquary-78pvt7hag-swayamsingal2022-3626s-projects.vercel.app
+
+Pre-built Docker images are also available for self-hosted deployments.
 
 ## Contributing
 
