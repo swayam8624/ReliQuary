@@ -1,6 +1,11 @@
 {
   "framework": "nextjs",
   "buildCommand": "next build",
+  "installCommand": "npm install"
+}
+{
+  "framework": "nextjs",
+  "buildCommand": "next build",
   "outputDirectory": "out",
   "routes": [
     {
