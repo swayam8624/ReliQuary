@@ -1,12 +1,7 @@
 {
   "user_id": "test_user",
-  "baseline_trust_score": 11.712347747102422,
+  "baseline_trust_score": 10.850678964398353,
   "trust_history": [
-    20.5,
-    13.7675,
-    12.759732078125,
-    11.78301629106954,
-    10.780674855432677,
     10.765556750727983,
     10.766634707115866,
     10.77241124786934,
@@ -18,7 +13,95 @@
     10.80794222494098,
     10.812085639612919,
     10.815812745709756,
-    10.819176151745165
+    10.819176151745165,
+    10.82222206413075,
+    10.824990412475273,
+    10.82751545396724,
+    10.829826509115765,
+    10.83194868153401,
+    10.833903505365539,
+    10.835709504810985,
+    10.837382667844906,
+    10.838936843044607,
+    10.840384070338118,
+    10.841734856199317,
+    10.842998402692936,
+    10.84418279841383,
+    10.845295178044301,
+    10.846341856077242,
+    10.847328439250491,
+    10.8482599214041,
+    10.849140763788224,
+    10.849974963292484,
+    10.850766110616371,
+    10.851517440034748,
+    10.852231872116857,
+    10.852912050517618,
+    10.853560373765466,
+    10.854179022812783,
+    10.854769984985891,
+    10.855335074866002,
+    10.855875952545844,
+    10.856394139635428,
+    10.856891033331479,
+    10.857367918816353,
+    10.85782598021168,
+    10.858266310278236,
+    10.858689919025299,
+    10.85909774136906,
+    10.859490643959775,
+    10.85986943128047,
+    10.86023485110591,
+    10.860587599398386,
+    10.860928324706704,
+    10.86125763212594,
+    10.861576086868132,
+    10.861884217487603,
+    10.862182518799152,
+    10.862471454522577,
+    10.862751459682944,
+    10.863022942792409,
+    10.863286287836415,
+    10.86354185608435,
+    10.863789987742463,
+    10.864031003464794,
+    10.864265205736135,
+    10.86449288013945,
+    10.864714296518821,
+    10.864929710047857,
+    10.865139362212345,
+    10.865343481715078,
+    10.865542285309951,
+    10.865735978571667,
+    10.865924756606768,
+    10.866108804711157,
+    10.866288298978715,
+    10.866463406865225,
+    10.866634287711362,
+    10.866801093228178,
+    10.866963967948182,
+    10.86712304964481,
+    10.867278469722859,
+    10.867430353582163,
+    10.86757882095668,
+    10.867723986230846,
+    10.867865958734992,
+    10.868004843021417,
+    10.868140739122552,
+    10.868273742792596,
+    10.868403945733803,
+    10.86853143580857,
+    10.868656297238358,
+    10.86877861079036,
+    10.868898453952815,
+    10.869015901099765,
+    10.869131023645963,
+    10.869243890192635,
+    10.869354566664718,
+    10.879788146671014,
+    10.880030267357364,
+    10.879914502345997,
+    10.879729027532917
   ],
   "behavioral_baselines": {
     "known_devices": [
@@ -133,9 +216,537 @@
       "risk_level": "VERY_HIGH",
       "trust_score": 10.819176151745165,
       "session_id": null
+    },
+    {
+      "timestamp": 1756387446,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.82222206413075,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756387446,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.824990412475273,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756387446,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.82751545396724,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756387446,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.829826509115765,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756388977,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.83194868153401,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756388977,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.833903505365539,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756388977,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.835709504810985,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756388977,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.837382667844906,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756390269,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.838936843044607,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756390269,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.840384070338118,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756390269,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.841734856199317,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756390269,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.842998402692936,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756391792,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.84418279841383,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756391792,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.845295178044301,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756391792,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.846341856077242,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756391792,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.847328439250491,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756393195,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.8482599214041,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756393195,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.849140763788224,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756393195,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.849974963292484,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756393195,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.850766110616371,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756397499,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.851517440034748,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756397499,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.852231872116857,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756397499,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.852912050517618,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756397499,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.853560373765466,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756399307,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.854179022812783,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756399307,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.854769984985891,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756399307,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.855335074866002,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756399307,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.855875952545844,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756399841,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.856394139635428,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756399841,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.856891033331479,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756399841,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.857367918816353,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756399841,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.85782598021168,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756400299,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.858266310278236,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756400299,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.858689919025299,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756400299,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.85909774136906,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756400299,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.859490643959775,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756401547,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.85986943128047,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756401547,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.86023485110591,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756401547,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.860587599398386,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756401547,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.860928324706704,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756403182,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.86125763212594,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756403182,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.861576086868132,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756403182,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.861884217487603,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756403182,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.862182518799152,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756403625,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.862471454522577,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756403625,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.862751459682944,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756403625,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.863022942792409,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756403625,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.863286287836415,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756405426,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.86354185608435,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756405426,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.863789987742463,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756405426,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.864031003464794,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756405426,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.864265205736135,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756405583,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.86449288013945,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756405583,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.864714296518821,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756405583,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.864929710047857,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756405583,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.865139362212345,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756408110,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.865343481715078,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756408110,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.865542285309951,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756408110,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.865735978571667,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756408110,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.865924756606768,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756430092,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.866108804711157,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756430092,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.866288298978715,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756430092,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.866463406865225,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756430092,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.866634287711362,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756431946,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.866801093228178,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756431946,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.866963967948182,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756431946,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.86712304964481,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756431946,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.867278469722859,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756432136,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.867430353582163,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756432136,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.86757882095668,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756432136,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.867723986230846,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756432136,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.867865958734992,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756434259,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.868004843021417,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756434259,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.868140739122552,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756434259,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.868273742792596,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756434259,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.868403945733803,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756436073,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.86853143580857,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756436073,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.868656297238358,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756436073,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.86877861079036,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756436073,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.868898453952815,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756436113,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.869015901099765,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756436113,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.869131023645963,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756436113,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.869243890192635,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756436113,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.869354566664718,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756437962,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.879788146671014,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756437962,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.880030267357364,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756437962,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.879914502345997,
+      "session_id": null
+    },
+    {
+      "timestamp": 1756437962,
+      "risk_level": "VERY_HIGH",
+      "trust_score": 10.879729027532917,
+      "session_id": null
     }
   ],
-  "last_evaluation": 1756343927,
-  "total_evaluations": 17,
+  "last_evaluation": 1756437962,
+  "total_evaluations": 105,
   "compliance_violations": 0
 }

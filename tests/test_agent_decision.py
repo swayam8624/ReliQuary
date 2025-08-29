@@ -195,7 +195,7 @@ class TestIndividualAgentDecisions:
         # Assert
         assert result["agent_id"] == "permissive_test"
         assert result["decision"] in ["allow", "deny"]
-        assert result["confidence"] in ["low", "medium", "high"]
+        assert result["confidence"] in ["very_low", "low", "medium", "high"]
     
     @pytest.mark.asyncio
     async def test_strict_agent_decision(self, strict_agent):

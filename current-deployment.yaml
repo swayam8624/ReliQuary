@@ -1,0 +1,243 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "7"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"reliquary-platform","component":"api","version":"v5.0.0"},"name":"reliquary-platform","namespace":"reliquary"},"spec":{"replicas":3,"selector":{"matchLabels":{"app":"reliquary-platform","component":"api"}},"strategy":{"rollingUpdate":{"maxSurge":1,"maxUnavailable":0},"type":"RollingUpdate"},"template":{"metadata":{"annotations":{"prometheus.io/path":"/observability/metrics/export","prometheus.io/port":"8080","prometheus.io/scrape":"true"},"labels":{"app":"reliquary-platform","component":"api","version":"v5.0.0"}},"spec":{"affinity":{"podAntiAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"podAffinityTerm":{"labelSelector":{"matchLabels":{"app":"reliquary-platform"}},"topologyKey":"kubernetes.io/hostname"},"weight":100}]}},"containers":[{"env":[{"name":"ENVIRONMENT","value":"production"},{"name":"LOG_LEVEL","value":"INFO"},{"name":"DATABASE_URL","valueFrom":{"secretKeyRef":{"key":"database-url","name":"reliquary-secrets"}}},{"name":"REDIS_URL","valueFrom":{"secretKeyRef":{"key":"redis-url","name":"reliquary-secrets"}}},{"name":"JWT_SECRET_KEY","valueFrom":{"secretKeyRef":{"key":"jwt-secret-key","name":"reliquary-secrets"}}},{"name":"ENCRYPTION_KEY","valueFrom":{"secretKeyRef":{"key":"encryption-key","name":"reliquary-secrets"}}},{"name":"PROMETHEUS_ENDPOINT","value":"http://prometheus:9090"},{"name":"JAEGER_ENDPOINT","value":"http://jaeger-collector:14268/api/traces"},{"name":"INFLUXDB_URL","value":"http://influxdb:8086"},{"name":"INFLUXDB_TOKEN","valueFrom":{"secretKeyRef":{"key":"influxdb-token","name":"reliquary-secrets"}}},{"name":"INFLUXDB_ORG","value":"reliquary"},{"name":"INFLUXDB_BUCKET","value":"metrics"}],"image":"reliquary/platform:v5.0.0","imagePullPolicy":"IfNotPresent","livenessProbe":{"failureThreshold":3,"httpGet":{"path":"/health","port":8000},"initialDelaySeconds":30,"periodSeconds":10,"timeoutSeconds":5},"name":"reliquary-api","ports":[{"containerPort":8000,"name":"http","protocol":"TCP"},{"containerPort":8080,"name":"metrics","protocol":"TCP"}],"readinessProbe":{"failureThreshold":2,"httpGet":{"path":"/status","port":8000},"initialDelaySeconds":10,"periodSeconds":5,"timeoutSeconds":3},"resources":{"limits":{"cpu":"1000m","memory":"2Gi"},"requests":{"cpu":"250m","memory":"512Mi"}},"startupProbe":{"failureThreshold":30,"httpGet":{"path":"/health","port":8000},"initialDelaySeconds":10,"periodSeconds":10,"timeoutSeconds":5},"volumeMounts":[{"mountPath":"/app/config","name":"config-volume","readOnly":true},{"mountPath":"/tmp","name":"temp-volume"},{"mountPath":"/app/rust_modules","name":"rust-modules","readOnly":true}]},{"env":[{"name":"AGENT_NETWORK_SIZE","value":"100"},{"name":"CONSENSUS_TIMEOUT","value":"30"},{"name":"BYZANTINE_TOLERANCE","value":"33"},{"name":"REDIS_URL","valueFrom":{"secretKeyRef":{"key":"redis-url","name":"reliquary-secrets"}}}],"image":"reliquary/agent-orchestrator:v5.0.0","imagePullPolicy":"IfNotPresent","livenessProbe":{"failureThreshold":3,"httpGet":{"path":"/agents/health","port":8001},"initialDelaySeconds":60,"periodSeconds":15,"timeoutSeconds":10},"name":"agent-orchestrator","ports":[{"containerPort":8001,"name":"agents","protocol":"TCP"}],"readinessProbe":{"failureThreshold":2,"httpGet":{"path":"/agents/ready","port":8001},"initialDelaySeconds":30,"periodSeconds":10,"timeoutSeconds":5},"resources":{"limits":{"cpu":"2000m","memory":"4Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}],"securityContext":{"fsGroup":10001,"runAsNonRoot":true,"runAsUser":10001},"serviceAccountName":"reliquary-service-account","tolerations":[{"effect":"NoSchedule","key":"reliquary.io/dedicated","operator":"Equal","value":"platform"}],"volumes":[{"configMap":{"name":"reliquary-config"},"name":"config-volume"},{"emptyDir":{},"name":"temp-volume"},{"configMap":{"name":"reliquary-rust-modules"},"name":"rust-modules"}]}}}}
+  creationTimestamp: "2025-08-29T06:39:46Z"
+  generation: 7
+  labels:
+    app: reliquary-platform
+    component: api
+    version: v5.0.0
+  name: reliquary-platform
+  namespace: reliquary
+  resourceVersion: "11215"
+  uid: fde22917-7f44-4a50-86c3-ce01811fd29b
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: reliquary-platform
+      component: api
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2025-08-29T13:52:48+05:30"
+        prometheus.io/path: /observability/metrics/export
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: reliquary-platform
+        component: api
+        version: v5.0.0
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: reliquary-platform
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - env:
+        - name: ENVIRONMENT
+          value: production
+        - name: LOG_LEVEL
+          value: INFO
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              key: database-url
+              name: reliquary-secrets
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              key: redis-url
+              name: reliquary-secrets
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: jwt-secret-key
+              name: reliquary-secrets
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              key: encryption-key
+              name: reliquary-secrets
+        - name: PROMETHEUS_ENDPOINT
+          value: http://prometheus:9090
+        - name: JAEGER_ENDPOINT
+          value: http://jaeger-collector:14268/api/traces
+        - name: INFLUXDB_URL
+          value: http://influxdb:8086
+        - name: INFLUXDB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: influxdb-token
+              name: reliquary-secrets
+        - name: INFLUXDB_ORG
+          value: reliquary
+        - name: INFLUXDB_BUCKET
+          value: metrics
+        image: reliquary/platform:v5.0.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: reliquary-api
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /status
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: "1"
+            memory: 2Gi
+          requests:
+            cpu: 250m
+            memory: 512Mi
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /health
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /app/config
+          name: config-volume
+          readOnly: true
+        - mountPath: /tmp
+          name: temp-volume
+        - mountPath: /app/rust_modules
+          name: rust-modules
+          readOnly: true
+      - env:
+        - name: AGENT_NETWORK_SIZE
+          value: "100"
+        - name: CONSENSUS_TIMEOUT
+          value: "30"
+        - name: BYZANTINE_TOLERANCE
+          value: "33"
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              key: redis-url
+              name: reliquary-secrets
+        image: reliquary/agent-orchestrator:v5.0.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /agents/health
+            port: 8001
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 10
+        name: agent-orchestrator
+        ports:
+        - containerPort: 8001
+          name: agents
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /agents/ready
+            port: 8001
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: "2"
+            memory: 4Gi
+          requests:
+            cpu: 500m
+            memory: 1Gi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      serviceAccount: reliquary-service-account
+      serviceAccountName: reliquary-service-account
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: reliquary.io/dedicated
+        operator: Equal
+        value: platform
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: reliquary-config
+        name: config-volume
+      - emptyDir: {}
+        name: temp-volume
+      - configMap:
+          defaultMode: 420
+          name: reliquary-rust-modules
+        name: rust-modules
+status:
+  conditions:
+  - lastTransitionTime: "2025-08-29T06:39:46Z"
+    lastUpdateTime: "2025-08-29T06:39:46Z"
+    message: Deployment does not have minimum availability.
+    reason: MinimumReplicasUnavailable
+    status: "False"
+    type: Available
+  - lastTransitionTime: "2025-08-29T08:22:48Z"
+    lastUpdateTime: "2025-08-29T08:22:48Z"
+    message: ReplicaSet "reliquary-platform-7d45d788cb" is progressing.
+    reason: ReplicaSetUpdated
+    status: "True"
+    type: Progressing
+  observedGeneration: 7
+  replicas: 4
+  unavailableReplicas: 4
+  updatedReplicas: 1

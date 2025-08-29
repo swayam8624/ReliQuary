@@ -1,0 +1,34 @@
+# ReliQuary Agent Orchestrator - Configuration
+
+server:
+  host: 0.0.0.0
+  port: 8001
+  workers: 2
+  debug: false
+
+network:
+  size: ${AGENT_NETWORK_SIZE:100}
+  consensus_timeout: ${CONSENSUS_TIMEOUT:30}
+  byzantine_tolerance: ${BYZANTINE_TOLERANCE:0.33}
+
+redis:
+  url: ${REDIS_URL}
+
+logging:
+  level: INFO
+  format: json
+  file: /app/logs/agent-orchestrator.log
+
+trust_engine:
+  trust_update_interval: 60
+  reputation_decay_rate: 0.01
+  consensus_weight_threshold: 0.6
+
+langgraph:
+  max_concurrent_agents: 50
+  task_queue_size: 1000
+  agent_response_timeout: 10
+
+observability:
+  enabled: true
+  metrics_export_interval: 15

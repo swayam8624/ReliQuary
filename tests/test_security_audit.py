@@ -191,22 +191,27 @@ class TestCryptographicSecurityTester:
     @pytest.mark.asyncio
     async def test_random_number_generation_test(self, crypto_tester):
         """Test random number generation testing"""
-        with patch('requests.get') as mock_get:
-            # Mock predictable random values
+        print("Starting random number generation test")
+        with patch('security.security_testing_tools.requests.get') as mock_get:
+            # Mock predictable random values - provide enough for 100 requests
             mock_responses = []
-            for i in range(10):
+            for i in range(100):
                 mock_response = MagicMock()
                 mock_response.status_code = 200
-                mock_response.json.return_value = {"random_value": str(i)}  # Sequential values
+                mock_response.json.return_value = {"random_value": str(i % 10)}  # Sequential values 0-9 repeating
                 mock_responses.append(mock_response)
+                print(f"Created mock response {i}: {mock_response.json.return_value}")
             
             mock_get.side_effect = mock_responses
+            print(f"Set mock_get.side_effect with {len(mock_responses)} responses")
             
             await crypto_tester._test_random_number_generation("https://test.reliquary.io")
+            print(f"Test completed, vulnerabilities: {crypto_tester.vulnerabilities}")
             
             # Should detect weak random number generation
             weak_random_findings = [v for v in crypto_tester.vulnerabilities 
                                   if v["type"] == "weak_random_generation"]
+            print(f"Weak random findings: {weak_random_findings}")
             assert len(weak_random_findings) > 0
     
     @pytest.mark.asyncio
@@ -257,12 +262,12 @@ class TestCryptographicSecurityTester:
     
     def test_ecb_mode_detection(self, crypto_tester):
         """Test ECB mode detection"""
-        # Test with repeated blocks (ECB mode)
-        ecb_ciphertext = ["abcd1234abcd1234efgh5678"]
+        # Test with repeated blocks (ECB mode) - same 32-character block repeated
+        ecb_ciphertext = ["abcd1234efgh5678ijkl9012mnop3456abcd1234efgh5678ijkl9012mnop3456"]
         assert crypto_tester._detect_ecb_mode(ecb_ciphertext) == True
         
         # Test with unique blocks (CBC/GCM mode)
-        cbc_ciphertext = ["abcd1234efgh5678ijkl9012"]
+        cbc_ciphertext = ["abcd1234efgh5678ijkl9012mnop3456"]
         assert crypto_tester._detect_ecb_mode(cbc_ciphertext) == False
 
 
@@ -311,8 +316,10 @@ class TestConsensusSecurityTester:
     async def test_consensus_manipulation_test(self, consensus_tester):
         """Test consensus manipulation testing"""
         with patch('requests.post') as mock_post:
-            # Mock inconsistent consensus decisions
+            # Mock inconsistent consensus decisions (5 responses to match implementation)
             responses = [
+                MagicMock(status_code=200, json=lambda: {"decision": "GRANT"}),
+                MagicMock(status_code=200, json=lambda: {"decision": "DENY"}),
                 MagicMock(status_code=200, json=lambda: {"decision": "GRANT"}),
                 MagicMock(status_code=200, json=lambda: {"decision": "DENY"}),
                 MagicMock(status_code=200, json=lambda: {"decision": "GRANT"})
@@ -365,16 +372,19 @@ class TestSecurityTestRunner:
             ConsensusSecurityTester=MagicMock(),
             NetworkSecurityTester=MagicMock()
         ):
-            # Mock individual tester results
-            test_runner.crypto_tester.test_cryptographic_security = MagicMock(
-                return_value=[{"type": "weak_crypto", "severity": "HIGH"}]
-            )
-            test_runner.consensus_tester.test_consensus_security = MagicMock(
-                return_value=[{"type": "consensus_bypass", "severity": "CRITICAL"}]
-            )
-            test_runner.network_tester.test_network_security = MagicMock(
-                return_value=[{"type": "exposed_service", "severity": "MEDIUM"}]
-            )
+            # Mock individual tester results to return coroutines
+            async def mock_crypto_test(*args, **kwargs):
+                return [{"type": "weak_crypto", "severity": "HIGH"}]
+            
+            async def mock_consensus_test(*args, **kwargs):
+                return [{"type": "consensus_bypass", "severity": "CRITICAL"}]
+            
+            async def mock_network_test(*args, **kwargs):
+                return [{"type": "exposed_service", "severity": "MEDIUM"}]
+            
+            test_runner.crypto_tester.test_cryptographic_security = mock_crypto_test
+            test_runner.consensus_tester.test_consensus_security = mock_consensus_test
+            test_runner.network_tester.test_network_security = mock_network_test
             
             report = await test_runner.run_all_security_tests("https://test.reliquary.io")
             
@@ -528,9 +538,9 @@ class TestIntegrationSecurityTests:
         
         # Verify aggregation
         assert report["total_findings"] == 3
-        assert report["severity_breakdown"]["CRITICAL"] == 1
-        assert report["severity_breakdown"]["HIGH"] == 1
-        assert report["severity_breakdown"]["MEDIUM"] == 1
+        assert report["severity_breakdown"]["critical"] == 1
+        assert report["severity_breakdown"]["high"] == 1
+        assert report["severity_breakdown"]["medium"] == 1
         
         # Verify risk score reflects severity
         assert report["risk_score"] > 6.0  # Should be high due to critical finding

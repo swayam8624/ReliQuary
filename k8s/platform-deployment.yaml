@@ -1,0 +1,200 @@
+# Simplified Deployment Configuration for ReliQuary Platform
+# Single container deployment with only the main API service
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reliquary-platform
+  namespace: reliquary
+  labels:
+    app: reliquary-platform
+    version: v5.0.0
+    component: api
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: reliquary-platform
+      component: api
+  template:
+    metadata:
+      labels:
+        app: reliquary-platform
+        version: v5.0.0
+        component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/observability/metrics/export"
+    spec:
+      serviceAccountName: reliquary-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: reliquary-api
+          image: reliquary/platform:v5.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+            - containerPort: 8080
+              name: metrics
+              protocol: TCP
+          env:
+            - name: ENVIRONMENT
+              value: "production"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: reliquary-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: reliquary-secrets
+                  key: redis-url
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: reliquary-secrets
+                  key: jwt-secret-key
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: reliquary-secrets
+                  key: encryption-key
+            - name: PROMETHEUS_ENDPOINT
+              value: "http://prometheus:9090"
+            - name: JAEGER_ENDPOINT
+              value: "http://jaeger-collector:14268/api/traces"
+            - name: INFLUXDB_URL
+              value: "http://influxdb:8086"
+            - name: INFLUXDB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: reliquary-secrets
+                  key: influxdb-token
+            - name: INFLUXDB_ORG
+              value: "reliquary"
+            - name: INFLUXDB_BUCKET
+              value: "metrics"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config
+              readOnly: true
+            - name: temp-volume
+              mountPath: /tmp
+            - name: rust-modules
+              mountPath: /app/rust_modules
+              readOnly: true
+      volumes:
+        - name: config-volume
+          configMap:
+            name: reliquary-config
+        - name: temp-volume
+          emptyDir: {}
+        - name: rust-modules
+          configMap:
+            name: reliquary-rust-modules
+      tolerations:
+        - key: "reliquary.io/dedicated"
+          operator: "Equal"
+          value: "platform"
+          effect: "NoSchedule"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reliquary-platform-service
+  namespace: reliquary
+  labels:
+    app: reliquary-platform
+    component: api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/observability/metrics/export"
+spec:
+  selector:
+    app: reliquary-platform
+    component: api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+    - name: metrics
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reliquary-platform-lb
+  namespace: reliquary
+  labels:
+    app: reliquary-platform
+    component: api
+spec:
+  selector:
+    app: reliquary-platform
+    component: api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 8000
+      protocol: TCP
+  type: LoadBalancer

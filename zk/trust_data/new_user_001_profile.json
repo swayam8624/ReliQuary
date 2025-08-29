@@ -1,10 +1,15 @@
 {
   "user_id": "new_user_001",
-  "baseline_trust_score": 91.47860625,
+  "baseline_trust_score": 95.39088925060835,
   "trust_history": [
     79.5,
     97.8325,
-    97.10331875
+    97.10331875,
+    97.20175121875,
+    97.55151796004415,
+    97.81944254603678,
+    97.99601156222059,
+    98.12257196781525
   ],
   "behavioral_baselines": {
     "known_devices": [
@@ -19,9 +24,19 @@
     "typical_access_intervals": [
       3600,
       3600,
+      3600,
+      3600,
+      3600,
+      3600,
+      3600,
       3600
     ],
     "typical_session_durations": [
+      1800,
+      1800,
+      1800,
+      1800,
+      1800,
       1800,
       1800,
       1800
@@ -29,11 +44,16 @@
     "typical_typing_speed": [
       65,
       65,
+      65,
+      65,
+      65,
+      65,
+      65,
       65
     ]
   },
   "risk_events": [],
-  "last_evaluation": 1756368259,
-  "total_evaluations": 3,
+  "last_evaluation": 1756403623,
+  "total_evaluations": 8,
   "compliance_violations": 0
 }

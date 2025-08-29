@@ -42,18 +42,36 @@ class CryptographicSecurityTester:
         try:
             # Test entropy endpoint
             entropy_endpoint = f"{target_url.rstrip('/')}/api/crypto/entropy"
+            self.logger.info(f"Testing random number generation at {entropy_endpoint}")
             
             random_values = []
-            for _ in range(100):
-                response = requests.get(entropy_endpoint, timeout=5)
-                if response.status_code == 200:
-                    data = response.json()
-                    if 'random_value' in data:
-                        random_values.append(data['random_value'])
+            for i in range(100):
+                self.logger.info(f"Making request {i}")
+                try:
+                    response = requests.get(entropy_endpoint, timeout=5)
+                    self.logger.info(f"Request {i}: Status {response.status_code}")
+                    if response.status_code == 200:
+                        data = response.json()
+                        self.logger.info(f"Request {i}: Data {data}")
+                        if 'random_value' in data:
+                            random_values.append(data['random_value'])
+                            self.logger.info(f"Added random value: {data['random_value']}")
+                        else:
+                            self.logger.info(f"Missing random_value in response: {data}")
+                    else:
+                        self.logger.info(f"Request {i}: Non-200 status {response.status_code}")
+                except Exception as req_error:
+                    self.logger.info(f"Request {i} failed: {req_error}")
+            
+            self.logger.info(f"Collected {len(random_values)} random values: {random_values}")
             
             if len(random_values) > 10:
                 # Test for patterns in random values
-                if self._detect_patterns(random_values):
+                self.logger.info(f"Testing for patterns in {len(random_values)} values")
+                pattern_result = self._detect_patterns(random_values)
+                self.logger.info(f"Pattern detection result: {pattern_result}")
+                if pattern_result:
+                    self.logger.info("Pattern detected - adding vulnerability")
                     self.vulnerabilities.append({
                         "type": "weak_random_generation",
                         "severity": "HIGH",
@@ -61,10 +79,16 @@ class CryptographicSecurityTester:
                         "location": entropy_endpoint,
                         "recommendation": "Use cryptographically secure random number generator"
                     })
+                else:
+                    self.logger.info("No patterns detected")
+            else:
+                self.logger.info("Not enough random values collected")
                     
         except Exception as e:
             self.logger.error(f"Random number generation test failed: {e}")
-    
+            import traceback
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
+
     async def _test_key_management(self, target_url: str):
         """Test key management practices"""
         try:
@@ -223,7 +247,8 @@ class CryptographicSecurityTester:
         for val in values:
             try:
                 if isinstance(val, str):
-                    numeric_values.append(int(val, 16) if len(val) <= 8 else hash(val))
+                    # Try to convert string to integer directly
+                    numeric_values.append(int(val))
                 else:
                     numeric_values.append(int(val))
             except (ValueError, TypeError):
@@ -236,8 +261,19 @@ class CryptographicSecurityTester:
         increasing = all(numeric_values[i] <= numeric_values[i+1] for i in range(len(numeric_values)-1))
         decreasing = all(numeric_values[i] >= numeric_values[i+1] for i in range(len(numeric_values)-1))
         
-        return increasing or decreasing
-    
+        # Also check for exact sequential patterns (0,1,2,3,4,5,6,7,8,9)
+        sequential = all(numeric_values[i] == i for i in range(len(numeric_values)))
+        
+        # Check for repeating patterns (e.g., 0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9...)
+        repeating = False
+        if len(numeric_values) >= 20:
+            # Check if first 10 values repeat in the next 10 values
+            first_ten = numeric_values[:10]
+            next_ten = numeric_values[10:20]
+            repeating = first_ten == next_ten
+        
+        return increasing or decreasing or sequential or repeating
+
     def _detect_ecb_mode(self, ciphertexts: List[str]) -> bool:
         """Detect ECB encryption mode by looking for repeated blocks"""
         for ciphertext in ciphertexts:

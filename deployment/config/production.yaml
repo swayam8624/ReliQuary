@@ -1,0 +1,56 @@
+# ReliQuary Platform - Production Configuration
+
+server:
+  host: 0.0.0.0
+  port: 8000
+  workers: 4
+  debug: false
+
+database:
+  url: ${DATABASE_URL}
+  pool_size: 20
+  max_overflow: 30
+
+redis:
+  url: ${REDIS_URL}
+  pool_size: 10
+
+security:
+  jwt_secret_key: ${JWT_SECRET_KEY}
+  encryption_key: ${ENCRYPTION_KEY}
+  algorithm: HS256
+  access_token_expire_minutes: 30
+  refresh_token_expire_days: 7
+
+logging:
+  level: INFO
+  format: json
+  file: /app/logs/reliquary.log
+
+metrics:
+  prometheus_endpoint: ${PROMETHEUS_ENDPOINT}
+  jaeger_endpoint: ${JAEGER_ENDPOINT}
+
+storage:
+  default_backend: local
+  local:
+    path: /app/data
+  s3:
+    endpoint: ${S3_ENDPOINT}
+    access_key: ${S3_ACCESS_KEY}
+    secret_key: ${S3_SECRET_KEY}
+    bucket: ${S3_BUCKET}
+
+trust_engine:
+  default_trust_threshold: 70
+  consensus_timeout_seconds: 30
+  byzantine_tolerance: 0.33
+
+zk:
+  circuits_path: /app/zk/circuits
+  verifier_path: /app/zk/verifier
+
+observability:
+  enabled: true
+  metrics_export_interval: 15
+  trace_sampling_rate: 0.1
