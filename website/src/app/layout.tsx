@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'ReliQuary Team' }],
   creator: 'ReliQuary Team',
   publisher: 'ReliQuary',
-  metadataBase: new URL('https://reliquary-d486pflfc-swayamsingal2022-3626s-projects.vercel.app'),
+  metadataBase: new URL('https://reliquary-kairoki.vercel.app'),
   alternates: {
     canonical: '/',
   },

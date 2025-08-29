@@ -33,7 +33,7 @@ const nextConfig = {
     ];
   },
   env: {
-    SITE_URL: process.env.SITE_URL || 'https://reliquary.io',
+    SITE_URL: process.env.SITE_URL || 'https://reliquary-kairoki.vercel.app',
     API_URL: process.env.API_URL || 'https://api.reliquary.io',
     DOCS_URL: process.env.DOCS_URL || 'https://docs.reliquary.io',
   },
