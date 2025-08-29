@@ -5,11 +5,11 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Install dependencies
-COPY website/package*.json ./
+COPY package*.json ./
 RUN npm ci
 
 # Copy source code
-COPY website/ ./
+COPY . ./
 
 # Build the Next.js application
 RUN npm run build
@@ -20,8 +20,8 @@ FROM node:18-alpine AS runner
 WORKDIR /app
 
 # Create non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 --gid 1001 nextjs
+RUN addgroup -S -g 1001 nodejs
+RUN adduser -S -u 1001 -G nodejs nextjs
 
 # Copy standalone output from builder stage
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
