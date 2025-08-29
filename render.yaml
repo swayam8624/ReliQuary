@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: reliquary-platform
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.platform
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: PORT
+        value: 8000
+    buildCommand: |
+      # Create deployment config directory
+      mkdir -p deployment/config
+      # Create a basic production config
+      echo "server:" > deployment/config/production.yaml
+      echo "  host: 0.0.0.0" >> deployment/config/production.yaml
+      echo "  port: 8000" >> deployment/config/production.yaml
+      echo "  workers: 2" >> deployment/config/production.yaml
+      echo "database:" >> deployment/config/production.yaml
+      echo "  url: sqlite:///app/data/reliquary.db" >> deployment/config/production.yaml
+      echo "redis:" >> deployment/config/production.yaml
+      echo "  url: redis://localhost:6379" >> deployment/config/production.yaml
+      echo "security:" >> deployment/config/production.yaml
+      echo "  jwt_secret: your-jwt-secret-key-change-in-production" >> deployment/config/production.yaml
+      echo "  encryption_key: your-encryption-key-change-in-production" >> deployment/config/production.yaml
+      echo "logging:" >> deployment/config/production.yaml
+      echo "  level: INFO" >> deployment/config/production.yaml
+      echo "  file: /app/logs/api.log" >> deployment/config/production.yaml
+      echo "metrics:" >> deployment/config/production.yaml
+      echo "  enabled: true" >> deployment/config/production.yaml
+      echo "  port: 8080" >> deployment/config/production.yaml
+      echo "storage:" >> deployment/config/production.yaml
+      echo "  backend: local" >> deployment/config/production.yaml
+      echo "  path: /app/data/vaults" >> deployment/config/production.yaml
+      echo "trust_engine:" >> deployment/config/production.yaml
+      echo "  enabled: true" >> deployment/config/production.yaml
+      echo "zk:" >> deployment/config/production.yaml
+      echo "  circuits_path: /app/zk/circuits" >> deployment/config/production.yaml
+      echo "  verifier_path: /app/zk/verifier" >> deployment/config/production.yaml
+      echo "observability:" >> deployment/config/production.yaml
+      echo "  tracing:" >> deployment/config/production.yaml
+      echo "    enabled: false" >> deployment/config/production.yaml
+      echo "  metrics:" >> deployment/config/production.yaml
+      echo "    enabled: true" >> deployment/config/production.yaml

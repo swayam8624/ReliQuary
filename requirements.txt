@@ -71,3 +71,38 @@ websockets==15.0.1
 wheel==0.45.1
 xxhash==3.5.0
 zstandard==0.23.0
+
+# Core dependencies
+fastapi==0.116.1
+uvicorn==0.35.0
+pydantic==2.11.7
+email-validator==2.2.0
+python-multipart==0.0.20
+python-jose==3.5.0
+passlib==1.7.4
+bcrypt==4.3.0
+
+# Database
+SQLAlchemy==2.0.42
+
+# HTTP clients
+httpx==0.28.1
+requests==2.32.4
+
+# Utilities
+PyYAML==6.0.2
+cryptography==45.0.5
+cbor2==5.4.6
+
+# WebAuthn
+webauthn==2.1.0
+
+# Async utilities
+anyio==4.9.0
+greenlet==3.2.3
+
+# For the agent orchestrator
+langgraph==0.6.2
+langchain==0.3.27
+transformers==4.55.4
+torch==2.8.0
