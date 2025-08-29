@@ -29,6 +29,19 @@ class Vault(BaseModel):
     metadata: VaultMetadata
     # The data field in the JSON will be a base64 encoded string
     data: str
+    # Additional fields for API compatibility
+    name: Optional[str] = None
+    description: Optional[str] = None
+    owner_id: Optional[str] = None
+    size_bytes: Optional[int] = 0
+    encryption_algorithm: Optional[str] = "AES-GCM"
+    status: Optional[str] = "active"
+    updated_at: Optional[datetime] = None
+    
+    @property
+    def vault_id(self) -> str:
+        """Return the vault ID from metadata for API compatibility."""
+        return str(self.metadata.vault_id)
 
 
 class VaultVersion(BaseModel):

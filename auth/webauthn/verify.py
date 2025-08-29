@@ -8,6 +8,114 @@ import webauthn
 from webauthn.helpers import options_to_json
 # --- FIX: Import the necessary class ---
 from webauthn.helpers.structs import AuthenticationCredential, PublicKeyCredentialDescriptor
+from dataclasses import dataclass
+from typing import Optional, Dict, Any, List
+
+@dataclass
+class AuthenticationOptions:
+    """Represents WebAuthn authentication options"""
+    challenge: str
+    rp_id: str
+    allow_credentials: List[PublicKeyCredentialDescriptor]
+
+class WebAuthnVerificationManager:
+    """Manages WebAuthn verification process"""
+    
+    def __init__(self):
+        self.challenge_store = {}
+        self.db_path = "auth/webauthn/keys.db"
+        self.rp_id = "webauthn.io"
+        self.rp_name = "ReliQuary"
+        self.rp_origin = f"https://{self.rp_id}"
+        self.init_db()
+    
+    def init_db(self):
+        """Ensures the database and table exist."""
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS credentials (
+                    username TEXT PRIMARY KEY,
+                    credential_id BLOB NOT NULL,
+                    public_key BLOB NOT NULL,
+                    sign_count INTEGER NOT NULL,
+                    transports TEXT
+                )
+            """)
+            conn.commit()
+    
+    def get_user_credential_ids(self, username: str) -> list[bytes]:
+        """Retrieves existing credential IDs for a user to generate a challenge."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT credential_id FROM credentials WHERE username=?", (username,))
+            results = cursor.fetchall()
+            if not results:
+                raise ValueError(f"User '{username}' does not exist or has no credentials.")
+            return [row[0] for row in results]
+    
+    def start_verification(self, username: str) -> AuthenticationOptions:
+        """Generates authentication options for the browser."""
+        credential_ids = self.get_user_credential_ids(username)
+
+        options = webauthn.generate_authentication_options(
+            rp_id=self.rp_id,
+            allow_credentials=[PublicKeyCredentialDescriptor(id=cred_id) for cred_id in credential_ids],
+        )
+
+        self.challenge_store[username] = options.challenge
+        return AuthenticationOptions(
+            challenge=options.challenge,
+            rp_id=self.rp_id,
+            allow_credentials=[PublicKeyCredentialDescriptor(id=cred_id) for cred_id in credential_ids]
+        )
+    
+    def complete_verification(self, username: str, response_json: str) -> Dict[str, Any]:
+        """Verifies the browser's authentication response."""
+        try:
+            # The library expects a dictionary, so json.loads is correct here.
+            credential_to_verify = json.loads(response_json)
+
+            expected_challenge = self.challenge_store.get(username)
+            if not expected_challenge:
+                raise ValueError("No challenge found for user. Verification timed out or invalid.")
+
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT credential_id, public_key, sign_count FROM credentials WHERE username=?", (username,))
+                db_row = cursor.fetchone()
+                if not db_row:
+                    raise ValueError(f"Could not find user '{username}' in database.")
+                
+                credential_id, public_key, sign_count = db_row
+
+            verification = webauthn.verify_authentication_response(
+                credential=credential_to_verify,
+                expected_challenge=expected_challenge,
+                expected_rp_id=self.rp_id,
+                expected_origin=self.rp_origin,
+                credential_public_key=public_key,
+                credential_current_sign_count=sign_count,
+                require_user_verification=False
+            )
+
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE credentials SET sign_count = ? WHERE credential_id = ?",
+                    (verification.new_sign_count, credential_id)
+                )
+                conn.commit()
+
+            logging.info(f"✅ Verification successful for '{username}'")
+            del self.challenge_store[username]
+            return {"status": "success"}
+
+        except Exception as e:
+            logging.error(f"❌ Verification failed for '{username}': {e}")
+            traceback.print_exc()
+            return {"status": "error", "message": str(e)}
 
 # Basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

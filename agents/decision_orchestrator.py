@@ -6,6 +6,7 @@ This module orchestrates the overall agent decision process.
 import json
 import logging
 import asyncio
+import time
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -104,11 +105,12 @@ class DecisionOrchestrator:
     
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        network_agents = ["neutral", "permissive", "strict", "watchdog"]
         self.agents = {
-            "neutral": NeutralAgent(),
-            "permissive": PermissiveAgent(),
-            "strict": StrictAgent(),
-            "watchdog": WatchdogAgent()
+            "neutral": NeutralAgent("neutral", network_agents),
+            "permissive": PermissiveAgent("permissive", network_agents),
+            "strict": StrictAgent("strict", network_agents),
+            "watchdog": WatchdogAgent("watchdog", network_agents)
         }
     
     async def make_decision(self, context: Dict[str, Any], user_id: str, resource_path: str) -> Dict[str, Any]:
@@ -180,14 +182,12 @@ class DecisionOrchestrator:
         tasks = []
         for agent_name, agent in self.agents.items():
             task = asyncio.create_task(
-                agent.evaluate({
-                    "decision_type": context.decision_type,
-                    "user_id": context.user_id,
-                    "resource_path": context.resource_path,
-                    "context_data": context.context_data,
-                    "priority": context.priority,
-                    "metadata": context.metadata
-                }),
+                agent.evaluate_access_request(
+                    request_id=f"request_{context.user_id}_{int(time.time())}",
+                    context_data=context.context_data,
+                    trust_score=75.0,  # Default trust score
+                    history=[]
+                ),
                 name=agent_name
             )
             tasks.append(task)
@@ -208,7 +208,13 @@ class DecisionOrchestrator:
                     "reasoning": str(vote)
                 })
             else:
-                processed_votes.append(vote)
+                # Convert agent response to expected format
+                processed_votes.append({
+                    "agent": vote.get("agent_id", agent_name),
+                    "vote": vote.get("decision", "error"),
+                    "confidence": vote.get("confidence", "low"),
+                    "reasoning": vote.get("reasoning", [])
+                })
         
         return processed_votes
     
@@ -231,12 +237,25 @@ class DecisionOrchestrator:
         
         for vote in votes:
             agents_consulted.append(vote["agent"])
-            if vote["vote"] == "approve":
+            # Convert decision to vote
+            decision = vote.get("decision", "deny")
+            if decision == "allow":
                 approve_votes += 1
-                total_confidence += vote["confidence"]
-            elif vote["vote"] == "deny":
+            elif decision == "deny":
                 deny_votes += 1
-                total_confidence += vote["confidence"]
+            
+            # Convert confidence to numeric value
+            confidence = vote.get("confidence", "low")
+            if isinstance(confidence, str):
+                confidence_map = {
+                    "very_low": 0.1,
+                    "low": 0.3,
+                    "medium": 0.5,
+                    "high": 0.7,
+                    "very_high": 0.9
+                }
+                confidence = confidence_map.get(confidence, 0.5)
+            total_confidence += confidence
         
         # Make decision based on majority vote
         if approve_votes > deny_votes:

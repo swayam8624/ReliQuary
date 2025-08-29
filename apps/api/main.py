@@ -59,6 +59,67 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+def get_app() -> FastAPI:
+    """Get the FastAPI application instance."""
+    return app
+
+def configure_middleware(app: FastAPI) -> FastAPI:
+    """Configure middleware for the FastAPI application."""
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Configure appropriately for production
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    return app
+
+def configure_routes(app: FastAPI) -> FastAPI:
+    """Configure routes for the FastAPI application."""
+    # Include authentication endpoints
+    app.include_router(auth_router)
+    
+    # Include ZK verification endpoints
+    app.include_router(zk_router)
+    
+    return app
+
+def configure_exception_handlers(app: FastAPI) -> FastAPI:
+    """Configure exception handlers for the FastAPI application."""
+    # Error handlers
+    @app.exception_handler(Exception)
+    async def general_exception_handler(request, exc: Exception):
+        """Handle unexpected exceptions."""
+        global logger
+        
+        error_details = {
+            "error": "Internal server error",
+            "detail": str(exc),
+            "type": type(exc).__name__
+        }
+        
+        # Log the error
+        if logger:
+            try:
+                logger.add_entry({
+                    "event": "api_error",
+                    "error_type": type(exc).__name__,
+                    "error_message": str(exc),
+                    "path": str(request.url),
+                    "method": request.method,
+                    "status": "error"
+                })
+            except:
+                pass  # Don't let logging errors crash the handler
+        
+        return JSONResponse(
+            status_code=500,
+            content=error_details
+        )
+    
+    return app
+
 # Setup authentication middleware
 app = setup_auth_middleware(app)
 

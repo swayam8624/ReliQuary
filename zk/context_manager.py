@@ -19,6 +19,15 @@ from auth.identity_manager import IdentityManager
 from auth.rbac_enhanced import EnhancedRBACManager
 from core.merkle_logging.writer import MerkleLogWriter
 
+@dataclass
+class ContextVerificationResponse:
+    """Response for context verification requests"""
+    success: bool
+    message: str
+    trust_score: int = 0
+    verification_level_met: bool = False
+    proof_hash: Optional[str] = None
+
 class VerificationLevel(Enum):
     """Context verification security levels"""
     BASIC = 1      # Basic device + timestamp

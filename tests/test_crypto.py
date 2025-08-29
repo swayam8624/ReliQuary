@@ -140,12 +140,12 @@ def test_sss_create_and_reconstruct_secret():
 
     assert len(shares) == num_shares, "Should create the specified number of shares"
     for share in shares:
-        assert isinstance(share, str) and len(share) > 0, "Each share should be non-empty hex string" 
+        assert isinstance(share, key_sharding.KeyShard) and len(share.data) > 0, "Each share should be a KeyShard with non-empty data"
 
-    reconstructed_secret = key_sharding.reconstruct_secret(shares[:threshold], threshold) 
+    reconstructed_secret = key_sharding.reconstruct_secret(shares[:threshold], threshold)
     assert reconstructed_secret == secret, "Secret should be reconstructed with threshold shares"
 
-    reconstructed_secret_more = key_sharding.reconstruct_secret(shares[1:threshold+1], threshold) 
+    reconstructed_secret_more = key_sharding.reconstruct_secret(shares[1:threshold+1], threshold)
     assert reconstructed_secret_more == secret, "Secret should be reconstructed with more than threshold shares"
 
 def test_sss_reconstruct_with_insufficient_shares():
@@ -156,8 +156,8 @@ def test_sss_reconstruct_with_insufficient_shares():
 
     shares = key_sharding.create_shares(secret, num_shares, threshold)
 
-    with pytest.raises(ValueError, match=f"Not enough shares to reconstruct secret: {threshold-1} provided, need {threshold}."): 
-        key_sharding.reconstruct_secret(shares[:threshold-1], threshold) 
+    with pytest.raises(ValueError, match=f"Not enough shards to reconstruct secret: {threshold-1} provided, need {threshold}."):
+        key_sharding.reconstruct_secret(shares[:threshold-1], threshold)
 
 def test_sss_invalid_parameters():
     """Test that SSS creation fails with invalid parameters."""
@@ -249,48 +249,40 @@ def test_kyber_key_generation():
     """Test Kyber key generation placeholder."""
     # FIXED: Expected sizes from new Rust placeholder
     pub_key, sec_key = generate_kyber_keys_rust()
-    assert isinstance(pub_key, bytes) and len(pub_key) == 32 
-    assert isinstance(sec_key, bytes) and len(sec_key) == 32 
-    assert pub_key == b'\x01' * 32 # Assert specific content of placeholder
-    assert sec_key == b'\x02' * 32 # Assert specific content of placeholder
+    assert isinstance(pub_key, bytes) and len(pub_key) == 1568
+    assert isinstance(sec_key, bytes) and len(sec_key) == 3168
 
 def test_kyber_encapsulate_decapsulate():
     """Test Kyber encapsulation/decapsulation placeholders."""
-    _, sec_key = generate_kyber_keys_rust() # Get a dummy secret key
-    public_key_dummy = b"\x00" * 32 
+    pub_key, sec_key = generate_kyber_keys_rust() # Get a dummy secret key
 
     # FIXED: Expected sizes and content from new Rust placeholder
-    ciphertext, shared_secret_encap = encapsulate_kyber_rust(public_key_dummy)
-    assert isinstance(ciphertext, bytes) and len(ciphertext) == 32 
-    assert isinstance(shared_secret_encap, bytes) and len(shared_secret_encap) == 32 
-    assert ciphertext == b'\x03' * 32
-    assert shared_secret_encap == b'\x04' * 32
+    # Note: The function returns (shared_secret, ciphertext) not (ciphertext, shared_secret)
+    shared_secret_encap, ciphertext = encapsulate_kyber_rust(pub_key)
+    assert isinstance(ciphertext, bytes) and len(ciphertext) == 1568
+    assert isinstance(shared_secret_encap, bytes) and len(shared_secret_encap) == 32
 
     # FIXED: Expected sizes and content from new Rust placeholder
     shared_secret_decap = decapsulate_kyber_rust(ciphertext, sec_key)
-    assert isinstance(shared_secret_decap, bytes) and len(shared_secret_decap) == 32 
-    assert shared_secret_decap == b'\x05' * 32
+    assert isinstance(shared_secret_decap, bytes) and len(shared_secret_decap) == 32
 
 
 def test_falcon_key_generation():
     """Test Falcon key generation placeholder."""
     # FIXED: Expected sizes and content from new Rust placeholder
     pub_key, sec_key = generate_falcon_keys_rust()
-    assert isinstance(pub_key, bytes) and len(pub_key) == 32 
-    assert isinstance(sec_key, bytes) and len(sec_key) == 32 
-    assert pub_key == b'\x06' * 32
-    assert sec_key == b'\x07' * 32
+    assert isinstance(pub_key, bytes) and len(pub_key) == 1793
+    assert isinstance(sec_key, bytes) and len(sec_key) == 2305
 
 def test_falcon_sign_verify():
     """Test Falcon sign/verify placeholders."""
-    _, sec_key = generate_falcon_keys_rust()
+    pub_key, sec_key = generate_falcon_keys_rust()
     message = b"Data to be signed by Falcon"
-    public_key_dummy = b"\x00" * 32 
 
     # FIXED: Expected size and content from new Rust placeholder
     signature = sign_falcon_rust(message, sec_key)
-    assert isinstance(signature, bytes) and len(signature) == 64 
-    assert signature == b'\x08' * 64
+    # Signature size can vary slightly, check it's in the expected range
+    assert isinstance(signature, bytes) and 1290 <= len(signature) <= 1310
 
-    is_valid = verify_falcon_rust(message, signature, public_key_dummy)
+    is_valid = verify_falcon_rust(message, signature, pub_key)
     assert is_valid == True

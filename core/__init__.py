@@ -21,39 +21,32 @@ from .constants import (
 )
 
 # Import utility functions
-from .utils.device_fingerprint import (
+from .utils import (
     generate_device_fingerprint,
-    validate_device_fingerprint,
-    extract_device_features
-)
-
-from .utils.file_utils import (
+    verify_device_fingerprint,
+    get_device_info,
     secure_delete_file,
     calculate_file_hash,
-    verify_file_integrity,
-    create_secure_temp_file
-)
-
-from .utils.time_utils import (
+    safe_read_file,
+    ensure_directory_exists,
     get_current_timestamp,
-    format_timestamp,
-    calculate_time_difference,
+    timestamp_to_iso,
+    get_time_range,
     is_within_time_window
 )
 
 # Import core services
 from .audit import (
-    AuditLogger,
-    AuditEvent,
-    AuditLevel
+    AuditTrailManager
 )
 
 from .metrics import (
     MetricsCollector,
-    MetricType,
-    CounterMetric,
-    GaugeMetric,
-    HistogramMetric
+    get_metrics_collector,
+    increment_counter,
+    set_gauge,
+    observe_histogram,
+    SystemMetrics
 )
 
 __all__ = [
@@ -72,30 +65,29 @@ __all__ = [
     
     # Device fingerprint utilities
     "generate_device_fingerprint",
-    "validate_device_fingerprint",
-    "extract_device_features",
+    "verify_device_fingerprint",
+    "get_device_info",
     
     # File utilities
     "secure_delete_file",
     "calculate_file_hash",
-    "verify_file_integrity",
-    "create_secure_temp_file",
+    "safe_read_file",
+    "ensure_directory_exists",
     
     # Time utilities
     "get_current_timestamp",
-    "format_timestamp",
-    "calculate_time_difference",
+    "timestamp_to_iso",
+    "get_time_range",
     "is_within_time_window",
     
     # Audit services
-    "AuditLogger",
-    "AuditEvent",
-    "AuditLevel",
+    "AuditTrailManager",
     
     # Metrics services
     "MetricsCollector",
-    "MetricType",
-    "CounterMetric",
-    "GaugeMetric",
-    "HistogramMetric"
+    "get_metrics_collector",
+    "increment_counter",
+    "set_gauge",
+    "observe_histogram",
+    "SystemMetrics"
 ]

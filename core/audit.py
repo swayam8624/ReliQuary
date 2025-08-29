@@ -1,9 +1,9 @@
 # core/audit.py
 
 import os
-from merkle_logging.writer import LogWriter
-from merkle_logging.merkle import create_merkle_root
-from merkle_logging.hasher import hash_data
+from .merkle_logging.writer import LogWriter
+from .merkle_logging.merkle import create_merkle_root
+from .merkle_logging.hasher import hash_data
 import config_package
 
 class AuditTrailManager:

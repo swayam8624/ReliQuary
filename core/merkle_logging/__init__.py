@@ -6,27 +6,21 @@ This package contains components for Merkle tree-based audit logging.
 
 # Import merkle logging components
 from .hasher import (
-    MerkleHasher,
-    HashAlgorithm
+    hash_data
 )
 
 from .merkle import (
-    MerkleTree,
-    MerkleNode,
-    MerkleProof
+    MerkleTree
 )
 
 from .writer import (
     MerkleLogWriter,
-    LogEntry
+    MerkleLogEntry
 )
 
 __all__ = [
-    "MerkleHasher",
-    "HashAlgorithm",
+    "hash_data",
     "MerkleTree",
-    "MerkleNode",
-    "MerkleProof",
     "MerkleLogWriter",
-    "LogEntry"
+    "MerkleLogEntry"
 ]

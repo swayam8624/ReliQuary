@@ -3,7 +3,7 @@
 import json
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
 import os
@@ -139,7 +139,7 @@ class WebAuthnManager:
         
         # Store challenge in database
         now = datetime.now(timezone.utc)
-        expires_at = datetime.now(timezone.utc).replace(minute=now.minute + 5)  # 5 minute expiry
+        expires_at = now + timedelta(minutes=5)  # 5 minute expiry
         
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
@@ -338,7 +338,7 @@ class WebAuthnManager:
         
         # Store challenge
         now = datetime.now(timezone.utc)
-        expires_at = datetime.now(timezone.utc).replace(minute=now.minute + 5)
+        expires_at = now + timedelta(minutes=5)
         
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()

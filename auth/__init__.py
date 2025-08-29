@@ -6,12 +6,16 @@ including OAuth, DID, WebAuthn, and RBAC systems.
 """
 
 # Import OAuth components
-from .oauth import (
-    OAuthManager,
-    TokenManager,
-    ClientCredentials,
-    JWTToken,
-    OAuthError
+from .oauth2 import (
+    AuthenticationService,
+    OAuth2Dependencies,
+    User
+)
+
+from .jwt_tokens import (
+    JWTManager,
+    TokenData,
+    TokenResponse
 )
 
 # Import DID components
@@ -48,11 +52,12 @@ from .rbac import (
 
 __all__ = [
     # OAuth components
-    "OAuthManager",
-    "TokenManager",
-    "ClientCredentials",
-    "JWTToken",
-    "OAuthError",
+    "AuthenticationService",
+    "OAuth2Dependencies",
+    "User",
+    "JWTManager",
+    "TokenData",
+    "TokenResponse",
     
     # DID components
     "DIDResolver",

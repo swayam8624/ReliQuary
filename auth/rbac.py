@@ -5,6 +5,61 @@ from fastapi import Depends, HTTPException, status
 from .oauth2 import verify_auth, get_current_active_user, User
 import config_package
 
+class AccessControlError(Exception):
+    """Exception raised for access control errors"""
+    pass
+
+class Role:
+    """Represents a user role"""
+    def __init__(self, name: str, permissions: List[str] = None):
+        self.name = name
+        self.permissions = permissions or []
+
+class Permission:
+    """Represents a permission"""
+    def __init__(self, name: str, description: str = ""):
+        self.name = name
+        self.description = description
+
+class Policy:
+    """Represents an access control policy"""
+    def __init__(self, name: str, roles: List[Role], permissions: List[Permission]):
+        self.name = name
+        self.roles = roles
+        self.permissions = permissions
+
+class RBACManager:
+    """Manages Role-Based Access Control"""
+    
+    def __init__(self):
+        self.roles = {}
+        self.permissions = {}
+        self.policies = {}
+    
+    def add_role(self, role: Role):
+        """Add a role to the RBAC system"""
+        self.roles[role.name] = role
+    
+    def add_permission(self, permission: Permission):
+        """Add a permission to the RBAC system"""
+        self.permissions[permission.name] = permission
+    
+    def assign_permission_to_role(self, role_name: str, permission_name: str):
+        """Assign a permission to a role"""
+        if role_name in self.roles and permission_name in self.permissions:
+            self.roles[role_name].permissions.append(permission_name)
+        else:
+            raise AccessControlError(f"Role or permission not found")
+    
+    def check_permission(self, user_roles: List[str], permission_name: str) -> bool:
+        """Check if a user with given roles has a specific permission"""
+        for role_name in user_roles:
+            if role_name in self.roles:
+                role = self.roles[role_name]
+                if permission_name in role.permissions:
+                    return True
+        return False
+
 class RoleChecker:
     """
     A FastAPI dependency class that checks if the authenticated user/client

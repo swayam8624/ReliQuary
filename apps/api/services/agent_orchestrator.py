@@ -15,6 +15,7 @@ from enum import Enum
 try:
     from agents.decision_orchestrator import DecisionOrchestrator
     from agents.graph import AgentGraph
+    from agents.agent_foundation import AgentRole
 except ImportError:
     # Mock implementations for development
     class DecisionOrchestrator:
@@ -30,8 +31,14 @@ except ImportError:
                 "timestamp": datetime.now().isoformat()
             }
     
+    class AgentRole(Enum):
+        NEUTRAL = "neutral"
+        PERMISSIVE = "permissive"
+        STRICT = "strict"
+        WATCHDOG = "watchdog"
+    
     class AgentGraph:
-        def __init__(self):
+        def __init__(self, agent_ids=None, agent_roles=None):
             pass
 
 
@@ -77,7 +84,15 @@ class AgentOrchestrator:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.decision_orchestrator = DecisionOrchestrator()
-        self.agent_graph = AgentGraph()
+        # Initialize AgentGraph with default agents and roles
+        agent_ids = ["neutral", "permissive", "strict", "watchdog"]
+        agent_roles = {
+            "neutral": AgentRole.NEUTRAL,
+            "permissive": AgentRole.PERMISSIVE,
+            "strict": AgentRole.STRICT,
+            "watchdog": AgentRole.WATCHDOG
+        }
+        self.agent_graph = AgentGraph(agent_ids, agent_roles)
     
     async def request_consensus(self, request: AgentRequest) -> AgentResponse:
         """

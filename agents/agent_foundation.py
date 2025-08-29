@@ -30,6 +30,10 @@ class AgentRole(Enum):
     MONITOR = "monitor"              # Monitors system health and anomalies
     COORDINATOR = "coordinator"      # Coordinates multi-agent operations
     SPECIALIST = "specialist"        # Specialized domain-specific validation
+    NEUTRAL = "neutral"              # Neutral decision-making agent
+    PERMISSIVE = "permissive"        # Permissive decision-making agent
+    STRICT = "strict"                # Strict decision-making agent
+    WATCHDOG = "watchdog"            # Watchdog monitoring agent
 
 class AgentStatus(Enum):
     """Agent operational status"""

@@ -6,6 +6,105 @@ import logging
 import traceback
 import webauthn
 from webauthn.helpers import options_to_json
+from dataclasses import dataclass
+from typing import Optional, Dict, Any
+
+@dataclass
+class RegistrationOptions:
+    """Represents WebAuthn registration options"""
+    challenge: str
+    rp_id: str
+    rp_name: str
+    user_id: str
+    user_name: str
+
+class WebAuthnRegistrationManager:
+    """Manages WebAuthn registration process"""
+    
+    def __init__(self):
+        self.challenge_store = {}
+        self.db_path = "auth/webauthn/keys.db"
+        self.rp_id = "webauthn.io"
+        self.rp_name = "ReliQuary"
+        self.rp_origin = f"https://{self.rp_id}"
+        self.init_db()
+    
+    def init_db(self):
+        """Initializes the SQLite database."""
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS credentials (
+                    username TEXT PRIMARY KEY,
+                    credential_id BLOB NOT NULL,
+                    public_key BLOB NOT NULL,
+                    sign_count INTEGER NOT NULL,
+                    transports TEXT
+                )
+            """)
+            conn.commit()
+    
+    def start_registration(self, username: str) -> RegistrationOptions:
+        """Generates registration options for the browser."""
+        user_id = username.encode()
+
+        options = webauthn.generate_registration_options(
+            rp_id=self.rp_id,
+            rp_name=self.rp_name,
+            user_id=user_id,
+            user_name=username,
+        )
+        # Store the challenge to verify it in the completion step
+        self.challenge_store[username] = options.challenge
+        return RegistrationOptions(
+            challenge=options.challenge,
+            rp_id=self.rp_id,
+            rp_name=self.rp_name,
+            user_id=user_id.decode(),
+            user_name=username
+        )
+    
+    def complete_registration(self, username: str, response_json: str) -> Dict[str, Any]:
+        """Verifies the browser's response and saves the new credential."""
+        try:
+            credential_to_verify = json.loads(response_json)
+
+            expected_challenge = self.challenge_store.get(username)
+            if not expected_challenge:
+                raise ValueError("No challenge found for user.")
+
+            verification = webauthn.verify_registration_response(
+                credential=credential_to_verify,
+                expected_challenge=expected_challenge,
+                expected_origin=self.rp_origin,
+                expected_rp_id=self.rp_id,
+                require_user_verification=False
+            )
+
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM credentials WHERE username=?", (username,))
+                cursor.execute(
+                    "INSERT INTO credentials (username, credential_id, public_key, sign_count, transports) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        username,
+                        verification.credential_id,
+                        verification.credential_public_key,
+                        verification.sign_count,
+                        json.dumps(credential_to_verify.get("response", {}).get("transports") or []),
+                    )
+                )
+                conn.commit()
+
+            logging.info(f"✅ Registration successful for '{username}'")
+            del self.challenge_store[username]
+            return {"status": "success"}
+
+        except Exception as e:
+            logging.error(f"❌ Registration failed for '{username}': {e}")
+            traceback.print_exc()
+            return {"status": "error", "message": str(e)}
 
 # Basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

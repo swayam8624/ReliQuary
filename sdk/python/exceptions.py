@@ -3,6 +3,8 @@ Custom exceptions for the ReliQuary SDK.
 This module defines specific exception types for different error conditions.
 """
 
+from typing import Optional
+
 class ReliQuaryError(Exception):
     """Base exception for all ReliQuary SDK errors"""
     pass
