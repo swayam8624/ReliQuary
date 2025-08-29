@@ -114,6 +114,14 @@ website/jest.config.js
 # Typescript
 website/*.tsbuildinfo
 
+# Public directory build artifacts
+website/public/build/
+website/public/_next/
+
+# Ignore all .next content but not the directory itself
+website/.next/*
+!website/.next/.gitkeep
+
 # -----------------------------------------------------------------------------
 # SDK Specific
 # -----------------------------------------------------------------------------
