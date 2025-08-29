@@ -2,9 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  output: 'export', // Changed from 'standalone' to 'export' for static site generation
   images: {
-    unoptimized: true, // Required for static export
+    domains: ['reliquary.io', 'cdn.reliquary.io'],
+    unoptimized: true,
   },
   async headers() {
     return [
