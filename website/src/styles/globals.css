@@ -18,12 +18,10 @@
   --accent-500: 236, 72, 153;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
 }
 
 html {
@@ -68,9 +66,8 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.glass-dark {
+.dark .glass {
   background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -92,6 +89,10 @@ body {
   @apply bg-white text-primary-600 border border-primary-200 hover:border-primary-300 font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105;
 }
 
+.dark .btn-secondary {
+  @apply bg-gray-800 text-primary-400 border-gray-700 hover:border-primary-500;
+}
+
 .btn-outline {
   @apply border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300;
 }
@@ -101,8 +102,8 @@ body {
   @apply bg-white rounded-xl shadow-lg border border-gray-200 p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
 }
 
-.card-dark {
-  @apply bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+.dark .card {
+  @apply bg-gray-800 border-gray-700;
 }
 
 /* Feature grid animations */
@@ -119,13 +120,25 @@ body {
   @apply bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto;
 }
 
+.dark .code-block {
+  @apply bg-gray-800;
+}
+
 /* Pricing card styles - IMPROVED CONTRAST */
 .pricing-card {
   @apply relative bg-white rounded-2xl shadow-xl border border-gray-300 p-8 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2;
 }
 
+.dark .pricing-card {
+  @apply bg-gray-800 border-gray-700;
+}
+
 .pricing-card.featured {
   @apply border-primary-500 bg-gradient-to-br from-primary-50 to-white transform hover:-translate-y-3 shadow-2xl;
+}
+
+.dark .pricing-card.featured {
+  @apply from-gray-800 to-gray-900;
 }
 
 .pricing-card.featured::before {
@@ -176,11 +189,19 @@ body {
 
 /* Form styles - FIXED INPUT VISIBILITY */
 .form-input {
-  @apply w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900;
+}
+
+.dark .form-input {
+  @apply border-gray-600 bg-gray-800 text-white;
 }
 
 .form-input::placeholder {
-  @apply text-gray-500 dark:text-gray-400;
+  @apply text-gray-500;
+}
+
+.dark .form-input::placeholder {
+  @apply text-gray-400;
 }
 
 .form-input:focus {
@@ -190,6 +211,10 @@ body {
 /* Navigation styles */
 .nav-link {
   @apply text-gray-700 hover:text-primary-600 font-medium transition-colors duration-200 relative;
+}
+
+.dark .nav-link {
+  @apply text-gray-300 hover:text-primary-400;
 }
 
 .nav-link::after {
@@ -237,18 +262,11 @@ body {
   border-image: linear-gradient(135deg, rgb(var(--primary-500)), rgb(var(--accent-500))) 1;
 }
 
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  .card {
-    @apply bg-gray-800 border-gray-700 text-white;
-  }
-  
-  .nav-link {
-    @apply text-gray-300 hover:text-primary-400;
-  }
-}
-
 /* Dark mode toggle styles */
 .dark-mode-toggle {
-  @apply p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors;
+  @apply p-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors;
+}
+
+.dark .dark-mode-toggle {
+  @apply bg-gray-700 text-gray-300 hover:bg-gray-600;
 }
