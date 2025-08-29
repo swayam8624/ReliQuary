@@ -11,18 +11,17 @@ export const metadata: Metadata = {
   authors: [{ name: 'ReliQuary Team' }],
   creator: 'ReliQuary Team',
   publisher: 'ReliQuary',
-  metadataBase: new URL('https://reliquary.io'),
+  metadataBase: new URL('https://reliquary-d486pflfc-swayamsingal2022-3626s-projects.vercel.app'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'ReliQuary - Enterprise-Grade Cryptographic Memory Platform',
     description: 'Secure, intelligent, and scalable cryptographic infrastructure with post-quantum security, multi-agent consensus, and zero-knowledge proofs.',
-    url: 'https://reliquary.io',
     siteName: 'ReliQuary',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.svg',
         width: 1200,
         height: 630,
         alt: 'ReliQuary Platform Overview',
@@ -50,7 +49,7 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: '/favicon.svg',
     shortcut: '/favicon-16x16.png',
     apple: '/apple-touch-icon.png',
     other: {
@@ -75,37 +74,7 @@ export default function RootLayout({
       <body className={`${inter.className} dark:bg-gray-900 dark:text-white`}>
         {children}
         
-        {/* Analytics */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Google Analytics
-              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-              
-              ga('create', 'UA-XXXXXXXXX-X', 'auto');
-              ga('send', 'pageview');
-            `,
-          }}
-        />
-        
-        {/* Hotjar */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(h,o,t,j,a,r){
-                h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
-                h._hjSettings={hjid:XXXXXXX,hjsv:6};
-                a=o.getElementsByTagName('head')[0];
-                r=o.createElement('script');r.async=1;
-                r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
-                a.appendChild(r);
-              })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
-            `,
-          }}
-        />
+        {/* Remove Google Analytics and Hotjar for now since we're testing */}
       </body>
     </html>
   )

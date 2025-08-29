@@ -59,6 +59,9 @@ export default function Header() {
   const pathname = usePathname();
 
   useEffect(() => {
+    // Only run in browser environment
+    if (typeof window === 'undefined') return;
+    
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
@@ -68,6 +71,9 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    // Only run in browser environment
+    if (typeof window === 'undefined') return;
+    
     // First check for saved theme preference
     const savedTheme = localStorage.getItem('theme');
     
@@ -91,6 +97,9 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    // Only run in browser environment
+    if (typeof window === 'undefined') return;
+    
     // Apply theme to document when darkMode state changes
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -109,9 +118,10 @@ export default function Header() {
     if (href === '/') {
       return pathname === '/';
     }
-    return pathname.startsWith(href);
+    return pathname?.startsWith(href);
   };
 
+  // ... Rest of your component remains the same
   return (
     <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
       scrolled 

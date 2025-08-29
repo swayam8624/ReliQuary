@@ -22,10 +22,13 @@ export default function LandingPage() {
       }
     };
 
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange(); // Handle initial hash
-
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    // Only add event listener in browser environment
+    if (typeof window !== 'undefined') {
+      window.addEventListener('hashchange', handleHashChange);
+      handleHashChange(); // Handle initial hash
+      
+      return () => window.removeEventListener('hashchange', handleHashChange);
+    }
   }, []);
 
   return (
