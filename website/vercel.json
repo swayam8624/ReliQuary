@@ -2,6 +2,7 @@
   "framework": "nextjs",
   "buildCommand": "next build",
   "outputDirectory": "out",
+  "packageManager": "npm",
   "routes": [
     {
       "src": "/(.*)",
