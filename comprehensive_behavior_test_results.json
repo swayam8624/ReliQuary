@@ -1,0 +1,316 @@
+{
+  "trust_building": [
+    {
+      "session": 0,
+      "trust_score": 56.2,
+      "risk_level": "HIGH",
+      "context": {
+        "user_id": "user_trust_building",
+        "device_verified": true,
+        "timestamp_verified": false,
+        "location_verified": false,
+        "pattern_verified": false,
+        "session_id": "session_0",
+        "access_frequency": 1,
+        "session_duration": 300
+      }
+    },
+    {
+      "session": 1,
+      "trust_score": 59.5,
+      "risk_level": "HIGH",
+      "context": {
+        "user_id": "user_trust_building",
+        "device_verified": true,
+        "timestamp_verified": false,
+        "location_verified": false,
+        "pattern_verified": false,
+        "session_id": "session_1",
+        "access_frequency": 2,
+        "session_duration": 360
+      }
+    },
+    {
+      "session": 2,
+      "trust_score": 69.25,
+      "risk_level": "MEDIUM",
+      "context": {
+        "user_id": "user_trust_building",
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": false,
+        "pattern_verified": false,
+        "session_id": "session_2",
+        "access_frequency": 3,
+        "session_duration": 420
+      }
+    },
+    {
+      "session": 3,
+      "trust_score": 71.05,
+      "risk_level": "MEDIUM",
+      "context": {
+        "user_id": "user_trust_building",
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": false,
+        "session_id": "session_3",
+        "access_frequency": 4,
+        "session_duration": 480
+      }
+    },
+    {
+      "session": 4,
+      "trust_score": 72.25,
+      "risk_level": "MEDIUM",
+      "context": {
+        "user_id": "user_trust_building",
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": false,
+        "session_id": "session_4",
+        "access_frequency": 5,
+        "session_duration": 540
+      }
+    },
+    {
+      "session": 5,
+      "trust_score": 79.35,
+      "risk_level": "MEDIUM",
+      "context": {
+        "user_id": "user_trust_building",
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": true,
+        "session_id": "session_5",
+        "access_frequency": 6,
+        "session_duration": 600
+      }
+    },
+    {
+      "session": 6,
+      "trust_score": 77.25,
+      "risk_level": "MEDIUM",
+      "context": {
+        "user_id": "user_trust_building",
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": true,
+        "session_id": "session_6",
+        "access_frequency": 7,
+        "session_duration": 660
+      }
+    },
+    {
+      "session": 7,
+      "trust_score": 84.15,
+      "risk_level": "LOW",
+      "context": {
+        "user_id": "user_trust_building",
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": true,
+        "session_id": "session_7",
+        "access_frequency": 8,
+        "session_duration": 720
+      }
+    },
+    {
+      "session": 8,
+      "trust_score": 84.15,
+      "risk_level": "LOW",
+      "context": {
+        "user_id": "user_trust_building",
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": true,
+        "session_id": "session_8",
+        "access_frequency": 9,
+        "session_duration": 780
+      }
+    },
+    {
+      "session": 9,
+      "trust_score": 76.35,
+      "risk_level": "MEDIUM",
+      "context": {
+        "user_id": "user_trust_building",
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": true,
+        "session_id": "session_9",
+        "access_frequency": 10,
+        "session_duration": 840
+      }
+    }
+  ],
+  "trust_fall": [
+    {
+      "session": "normal",
+      "trust_score": 83.55,
+      "risk_level": "LOW",
+      "context": {
+        "user_id": "user_trust_fall",
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": true,
+        "access_frequency": 8,
+        "session_duration": 1800
+      },
+      "event": "Normal behavior"
+    },
+    {
+      "session": "suspicious_device",
+      "trust_score": 73.95,
+      "risk_level": "MEDIUM",
+      "context": {
+        "user_id": "user_trust_fall",
+        "device_verified": false,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": true,
+        "access_frequency": 8,
+        "session_duration": 1800
+      },
+      "event": "Suspicious device detected"
+    },
+    {
+      "session": "unusual_location",
+      "trust_score": 54.75,
+      "risk_level": "HIGH",
+      "context": {
+        "user_id": "user_trust_fall",
+        "device_verified": false,
+        "timestamp_verified": true,
+        "location_verified": false,
+        "pattern_verified": true,
+        "access_frequency": 8,
+        "session_duration": 1800
+      },
+      "event": "Unusual location detected"
+    }
+  ],
+  "access_control": [
+    {
+      "request": 0,
+      "trust_score": 90,
+      "decision": "approved",
+      "confidence": 95.0,
+      "risk_assessment": {
+        "security_risk": "low",
+        "compliance_risk": "low",
+        "operational_risk": "low"
+      }
+    },
+    {
+      "request": 1,
+      "trust_score": 75,
+      "decision": "approved_with_conditions",
+      "confidence": 75.0,
+      "risk_assessment": {
+        "security_risk": "low",
+        "compliance_risk": "low",
+        "operational_risk": "low"
+      }
+    },
+    {
+      "request": 2,
+      "trust_score": 65,
+      "decision": "approved_with_conditions",
+      "confidence": 75.0,
+      "risk_assessment": {
+        "security_risk": "medium",
+        "compliance_risk": "low",
+        "operational_risk": "low"
+      }
+    },
+    {
+      "request": 3,
+      "trust_score": 55,
+      "decision": "denied",
+      "confidence": 45.0,
+      "risk_assessment": {
+        "security_risk": "medium",
+        "compliance_risk": "low",
+        "operational_risk": "low"
+      }
+    },
+    {
+      "request": 4,
+      "trust_score": 40,
+      "decision": "denied",
+      "confidence": 45.0,
+      "risk_assessment": {
+        "security_risk": "high",
+        "compliance_risk": "low",
+        "operational_risk": "low"
+      }
+    }
+  ],
+  "zk_verification": [
+    {
+      "scenario": "Perfect Context",
+      "verification_result": {
+        "verified": true,
+        "trust_score": 100.0,
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": true,
+        "verification_time": 0.22273331807621483,
+        "proof_hash": "zk_proof_hash_-178975161236198"
+      },
+      "accuracy": 1.0
+    },
+    {
+      "scenario": "Device Issue",
+      "verification_result": {
+        "verified": false,
+        "trust_score": 70.0,
+        "device_verified": false,
+        "timestamp_verified": true,
+        "location_verified": true,
+        "pattern_verified": true,
+        "verification_time": 0.19987612553296452,
+        "proof_hash": "zk_proof_hash_-733928140842789"
+      },
+      "accuracy": 0.7
+    },
+    {
+      "scenario": "Location Issue",
+      "verification_result": {
+        "verified": false,
+        "trust_score": 75.0,
+        "device_verified": true,
+        "timestamp_verified": true,
+        "location_verified": false,
+        "pattern_verified": true,
+        "verification_time": 0.11668244105060693,
+        "proof_hash": "zk_proof_hash_4711297267552461"
+      },
+      "accuracy": 0.75
+    },
+    {
+      "scenario": "Multiple Issues",
+      "verification_result": {
+        "verified": false,
+        "trust_score": 0.0,
+        "device_verified": false,
+        "timestamp_verified": false,
+        "location_verified": false,
+        "pattern_verified": false,
+        "verification_time": 0.40574482239987353,
+        "proof_hash": "zk_proof_hash_-324620949961009"
+      },
+      "accuracy": 0.0
+    }
+  ]
+}

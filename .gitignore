@@ -145,3 +145,6 @@ sdk/java/.project
 sdk/java/.classpath
 sdk/java/.metadata
 sdk/java/.DS_Store
+
+
+*.tex

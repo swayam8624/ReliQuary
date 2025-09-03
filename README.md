@@ -18,29 +18,32 @@ Secure your digital assets against today's threats and tomorrow's quantum comput
 ## 🚀 Features
 
 ### 🔒 Post-Quantum Security
+
 - **PQC Algorithms**: Lattice-based cryptography resistant to quantum attacks
 - **Hybrid Encryption**: Combines classical and post-quantum algorithms for maximum security
 - **Key Rotation**: Automatic key rotation with zero-downtime transitions
 
 ### 🧠 Intelligent Multi-Agent Consensus
+
 - **Distributed Verification**: Multi-agent system validates all transactions
 - **Adaptive Consensus**: Adjusts consensus mechanism based on network conditions
 - **Fault Tolerance**: Byzantine Fault Tolerance with 99.99% uptime guarantee
 
 ### 🕵️ Zero-Knowledge Proofs
+
 - **Privacy-Preserving**: Verify without revealing sensitive information
 - **Efficient Proving**: Constant-time proof generation and verification
 - **Selective Disclosure**: Choose what information to reveal in each context
 
 ### 📊 Performance Metrics
 
-| Metric | Score | Industry Benchmark |
-|--------|-------|-------------------|
-| Security Rating | A+ | A |
-| Load Time | < 1.2s | < 3s |
-| Lighthouse Performance | 98/100 | 90+ |
-| Mobile Score | 95/100 | 85+ |
-| Accessibility | 92/100 | 80+ |
+| Metric                 | Score  | Industry Benchmark |
+| ---------------------- | ------ | ------------------ |
+| Security Rating        | A+     | A                  |
+| Load Time              | < 1.2s | < 3s               |
+| Lighthouse Performance | 98/100 | 90+                |
+| Mobile Score           | 95/100 | 85+                |
+| Accessibility          | 92/100 | 80+                |
 
 ## 🛠 Getting Started
 
@@ -103,6 +106,7 @@ Secure your digital assets against today's threats and tomorrow's quantum comput
    ```bash
    docker-compose up --build
    ```
+
    The API will be accessible at `http://localhost:8000`.
 
 ## 📁 Project Structure
@@ -142,11 +146,11 @@ ReliQuary provides official Docker images for easy deployment across multiple en
 
 ### Official Docker Images
 
-| Image | Tag | Description |
-|-------|-----|-------------|
-| [swayamsingal/reliquary-platform](https://hub.docker.com/r/swayamsingal/reliquary-platform) | v5.0.0 | Main ReliQuary platform |
+| Image                                                                                                           | Tag    | Description                |
+| --------------------------------------------------------------------------------------------------------------- | ------ | -------------------------- |
+| [swayamsingal/reliquary-platform](https://hub.docker.com/r/swayamsingal/reliquary-platform)                     | v5.0.0 | Main ReliQuary platform    |
 | [swayamsingal/reliquary-agent-orchestrator](https://hub.docker.com/r/swayamsingal/reliquary-agent-orchestrator) | v5.0.0 | Agent orchestrator service |
-| [swayamsingal/reliquary-website](https://hub.docker.com/r/swayamsingal/reliquary-website) | v1.0.0 | Marketing website |
+| [swayamsingal/reliquary-website](https://hub.docker.com/r/swayamsingal/reliquary-website)                       | v1.0.0 | Marketing website          |
 
 ### Pull and Run Docker Images
 
@@ -202,11 +206,13 @@ docker build -t reliquary/website:v1.0.0 -f website/Dockerfile .
 ### Multi-Architecture Support
 
 Our Docker images support multiple architectures:
+
 - AMD64 (x86_64)
 - ARM64 (aarch64)
 - ARMv7 (armhf)
 
 To build for specific architectures:
+
 ```bash
 # Build for ARM64
 docker buildx build --platform linux/arm64 -t reliquary/platform:v5.0.0 .
@@ -253,13 +259,13 @@ For self-hosted deployments, you can use either Docker Compose or Kubernetes man
 
 ## 🔧 API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check endpoint |
-| `/version` | GET | API version information |
+| Endpoint         | Method   | Description                 |
+| ---------------- | -------- | --------------------------- |
+| `/health`        | GET      | Health check endpoint       |
+| `/version`       | GET      | API version information     |
 | `/api/v1/vaults` | GET/POST | Manage cryptographic vaults |
-| `/api/v1/auth` | POST | Authentication endpoints |
-| `/api/v1/audit` | GET | Audit log retrieval |
+| `/api/v1/auth`   | POST     | Authentication endpoints    |
+| `/api/v1/audit`  | GET      | Audit log retrieval         |
 
 ## 🧪 Testing
 
@@ -279,41 +285,44 @@ flake8 .
 
 ## 📈 Performance Benchmarks
 
-| Test | Score | Target |
-|------|-------|--------|
-| Lighthouse Performance | 98/100 | >95 |
-| First Contentful Paint | < 1.2s | < 1.5s |
+| Test                     | Score  | Target |
+| ------------------------ | ------ | ------ |
+| Lighthouse Performance   | 98/100 | >95    |
+| First Contentful Paint   | < 1.2s | < 1.5s |
 | Largest Contentful Paint | < 2.1s | < 2.5s |
-| Cumulative Layout Shift | 0.01 | < 0.1 |
-| Time to Interactive | < 2.8s | < 3.5s |
+| Cumulative Layout Shift  | 0.01   | < 0.1  |
+| Time to Interactive      | < 2.8s | < 3.5s |
 
 ## 🔐 Security Features
 
 ### Post-Quantum Cryptography
+
 - **Kyber-1024**: Key encapsulation mechanism
 - **Falcon-1024**: Digital signature algorithm
 - **AES-GCM-256**: Symmetric encryption
 
 ### Zero-Knowledge Proofs
+
 - **ZK-SNARKs**: Privacy-preserving authentication
 - **Context Verification**: Device, location, and pattern matching
 - **Trust Scoring**: Dynamic trust assessment
 
 ### Multi-Agent Consensus
+
 - **Quorum-Based**: Distributed decision making
 - **Trust Engine**: Dynamic trust scoring
 - **Merkle Logging**: Immutable audit trails
 
 ## 🌐 Browser Support
 
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | ✅ Supported |
-| Firefox | 88+ | ✅ Supported |
-| Safari | 14+ | ✅ Supported |
-| Edge | 90+ | ✅ Supported |
-| Mobile Safari | 14+ | ✅ Supported |
-| Chrome Mobile | 90+ | ✅ Supported |
+| Browser       | Version | Status       |
+| ------------- | ------- | ------------ |
+| Chrome        | 90+     | ✅ Supported |
+| Firefox       | 88+     | ✅ Supported |
+| Safari        | 14+     | ✅ Supported |
+| Edge          | 90+     | ✅ Supported |
+| Mobile Safari | 14+     | ✅ Supported |
+| Chrome Mobile | 90+     | ✅ Supported |
 
 ## 📚 Additional Resources
 
@@ -340,4 +349,4 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 **Built with ❤️ by the ReliQuary Team**
 
-*Securing the digital future against quantum threats*
+_Securing the digital future against quantum threats_
