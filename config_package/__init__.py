@@ -1,4 +1,5 @@
 # config.py
+import os
 
 API_VERSION = "v1"
 DEFAULT_ENCRYPTION_ALGORITHM = "AES_GCM_256"
@@ -33,8 +34,15 @@ AUDIT_LOG_FILE_PATH_LOCAL = "audit_logs/reliquary.log"
 # In a real-world application, this would be a secure database or a secrets manager.
 API_KEYS = {
     # Hashed API keys for security
-    "59cdd0deecfa63907936a609e4322855694bf373ef4d076bd4a880f0834a7f8f": {"client_name": "VaultAdmin-Client", "roles": ["vault:admin", "auditor"]},
-    "049c8490c79252b7ef8ad5b4255e4c0f619e8a2a5d9367d2567e1427c1e0657c": {"client_name": "ReadOnly-Client", "roles": ["vault:read"]}
+    # Loading from environment variables for better security
+    os.getenv("VAULT_ADMIN_API_KEY", "59cdd0deecfa63907936a609e4322855694bf373ef4d076bd4a880f0834a7f8f"): {
+        "client_name": "VaultAdmin-Client", 
+        "roles": ["vault:admin", "auditor"]
+    },
+    os.getenv("READONLY_API_KEY", "049c8490c79252b7ef8ad5b4255e4c0f619e8a2a5d9367d2567e1427c1e0657c"): {
+        "client_name": "ReadOnly-Client", 
+        "roles": ["vault:read"]
+    }
 }
 
 # The RBAC matrix defines which roles have access to which permissions.
@@ -60,8 +68,8 @@ LEGACY_ROLE_MAPPINGS = {
     "readonly": "vault_readonly"
 }
 
-RELIQUARY_RP_ID = "localhost"
-RELIQUARY_RP_ORIGIN = f"https://{RELIQUARY_RP_ID}:8000"
+RELIQUARY_RP_ID = os.getenv("RELIQUARY_RP_ID", "localhost")
+RELIQUARY_RP_ORIGIN = os.getenv("RELIQUARY_RP_ORIGIN", f"https://{RELIQUARY_RP_ID}:8000")
 
 def get_config():
     """Get configuration as a dictionary."""
@@ -96,4 +104,3 @@ def get_config():
             "rp_origin": RELIQUARY_RP_ORIGIN
         }
     }
-

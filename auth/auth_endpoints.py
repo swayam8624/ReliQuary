@@ -466,15 +466,21 @@ async def auth_health_check():
             # Test identity manager
             test_profile = identity_manager.get_user_profile("nonexistent_user")
             health_status["components"]["identity_manager"] = "healthy"
-        except Exception:
+        except (ValueError, AttributeError) as e:
             health_status["components"]["identity_manager"] = "degraded"
+        except Exception as e:
+            health_status["components"]["identity_manager"] = "degraded"
+            logger.error(f"Unexpected error in identity manager health check: {e}")
         
         # Test WebAuthn manager
         try:
             webauthn_manager.create_registration_challenge("test_user")
             health_status["components"]["webauthn_manager"] = "healthy"
-        except Exception:
+        except (ValueError, AttributeError) as e:
             health_status["components"]["webauthn_manager"] = "degraded"
+        except Exception as e:
+            health_status["components"]["webauthn_manager"] = "degraded"
+            logger.error(f"Unexpected error in WebAuthn manager health check: {e}")
         
         # Check if any components are degraded
         if any(status == "degraded" for status in health_status["components"].values()):
@@ -482,11 +488,17 @@ async def auth_health_check():
         
         return health_status
         
+    except (ConnectionError, TimeoutError) as e:
+        return {
+            "status": "unhealthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "error": f"Connection or timeout error: {str(e)}"
+        }
     except Exception as e:
         return {
             "status": "unhealthy",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "error": str(e)
+            "error": f"Unexpected error: {str(e)}"
         }
 
 @auth_router.get("/info", response_model=Dict[str, Any])

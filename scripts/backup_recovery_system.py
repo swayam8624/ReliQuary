@@ -106,7 +106,85 @@ class ProductionBackupSystem:
     def _load_backup_jobs(self) -> List[BackupJob]:
         """Load backup job definitions"""
         
-        return [\n            # Database backups\n            BackupJob(\n                name="postgresql_backup",\n                source_type="database",\n                source_path="postgresql://reliquary:password@postgres:5432/reliquary",\n                destination="s3://reliquary-backups-prod/database/",\n                schedule_cron="0 2 * * *",  # Daily at 2 AM\n                retention_days=30,\n                encryption_enabled=True,\n                compression_enabled=True,\n                priority=1\n            ),\n            \n            # Redis backups\n            BackupJob(\n                name="redis_backup",\n                source_type="database",\n                source_path="redis://redis:6379/0",\n                destination="s3://reliquary-backups-prod/redis/",\n                schedule_cron="0 3 * * *",  # Daily at 3 AM\n                retention_days=7,\n                encryption_enabled=True,\n                compression_enabled=True,\n                priority=2\n            ),\n            \n            # Kubernetes configuration backups\n            BackupJob(\n                name="kubernetes_config_backup",\n                source_type="kubernetes",\n                source_path="reliquary",  # namespace\n                destination="s3://reliquary-backups-prod/k8s/",\n                schedule_cron="0 4 * * *",  # Daily at 4 AM\n                retention_days=90,\n                encryption_enabled=True,\n                compression_enabled=True,\n                priority=3\n            ),\n            \n            # Vault data backups\n            BackupJob(\n                name="vault_data_backup",\n                source_type="files",\n                source_path="/app/vaults/",\n                destination="s3://reliquary-backups-prod/vaults/",\n                schedule_cron="0 1 * * *",  # Daily at 1 AM\n                retention_days=90,\n                encryption_enabled=True,\n                compression_enabled=True,\n                priority=1\n            ),\n            \n            # Application logs\n            BackupJob(\n                name="application_logs_backup",\n                source_type="files",\n                source_path="/app/logs/",\n                destination="s3://reliquary-backups-prod/logs/",\n                schedule_cron="0 5 * * *",  # Daily at 5 AM\n                retention_days=30,\n                encryption_enabled=False,\n                compression_enabled=True,\n                priority=5\n            ),\n            \n            # Configuration backups\n            BackupJob(\n                name="config_backup",\n                source_type="files",\n                source_path="/app/config/",\n                destination="s3://reliquary-backups-prod/config/",\n                schedule_cron="0 6 * * *",  # Daily at 6 AM\n                retention_days=90,\n                encryption_enabled=True,\n                compression_enabled=True,\n                priority=2\n            )\n        ]
+        return [
+            # Database backups
+            BackupJob(
+                name="postgresql_backup",
+                source_type="database",
+                source_path="postgresql://reliquary:password@postgres:5432/reliquary",
+                destination="s3://reliquary-backups-prod/database/",
+                schedule_cron="0 2 * * *",  # Daily at 2 AM
+                retention_days=30,
+                encryption_enabled=True,
+                compression_enabled=True,
+                priority=1
+            ),
+            
+            # Redis backups
+            BackupJob(
+                name="redis_backup",
+                source_type="database",
+                source_path="redis://redis:6379/0",
+                destination="s3://reliquary-backups-prod/redis/",
+                schedule_cron="0 3 * * *",  # Daily at 3 AM
+                retention_days=7,
+                encryption_enabled=True,
+                compression_enabled=True,
+                priority=2
+            ),
+            
+            # Kubernetes configuration backups
+            BackupJob(
+                name="kubernetes_config_backup",
+                source_type="kubernetes",
+                source_path="reliquary",  # namespace
+                destination="s3://reliquary-backups-prod/k8s/",
+                schedule_cron="0 4 * * *",  # Daily at 4 AM
+                retention_days=90,
+                encryption_enabled=True,
+                compression_enabled=True,
+                priority=3
+            ),
+            
+            # Vault data backups
+            BackupJob(
+                name="vault_data_backup",
+                source_type="files",
+                source_path="/app/vaults/",
+                destination="s3://reliquary-backups-prod/vaults/",
+                schedule_cron="0 1 * * *",  # Daily at 1 AM
+                retention_days=90,
+                encryption_enabled=True,
+                compression_enabled=True,
+                priority=1
+            ),
+            
+            # Application logs
+            BackupJob(
+                name="application_logs_backup",
+                source_type="files",
+                source_path="/app/logs/",
+                destination="s3://reliquary-backups-prod/logs/",
+                schedule_cron="0 5 * * *",  # Daily at 5 AM
+                retention_days=30,
+                encryption_enabled=False,
+                compression_enabled=True,
+                priority=5
+            ),
+            
+            # Configuration backups
+            BackupJob(
+                name="config_backup",
+                source_type="files",
+                source_path="/app/config/",
+                destination="s3://reliquary-backups-prod/config/",
+                schedule_cron="0 6 * * *",  # Daily at 6 AM
+                retention_days=90,
+                encryption_enabled=True,
+                compression_enabled=True,
+                priority=2
+            )
+        ]
     
     async def run_backup_job(self, job: BackupJob) -> Dict[str, Any]:
         """Execute a single backup job"""
@@ -166,9 +244,22 @@ class ProductionBackupSystem:
                 
                 # Extract connection details from URL
                 # This is simplified - in production, use proper URL parsing
-                cmd = [\n                    "pg_dump",\n                    "--no-password",\n                    "--verbose",\n                    "--clean",\n                    "--if-exists",\n                    "--create",\n                    "--file", backup_path,\n                    job.source_path\n                ]
+                cmd = [
+                    "pg_dump",
+                    "--no-password",
+                    "--verbose",
+                    "--clean",
+                    "--if-exists",
+                    "--create",
+                    "--file", backup_path,
+                    job.source_path
+                ]
                 
-                process = await asyncio.create_subprocess_exec(\n                    *cmd,\n                    stdout=asyncio.subprocess.PIPE,\n                    stderr=asyncio.subprocess.PIPE\n                )
+                process = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
                 
                 stdout, stderr = await process.communicate()
                 
@@ -258,7 +349,11 @@ class ProductionBackupSystem:
             # Create compressed archive
             cmd = ["tar", "-czf", backup_path, "-C", os.path.dirname(job.source_path), os.path.basename(job.source_path)]
             
-            process = await asyncio.create_subprocess_exec(\n                *cmd,\n                stdout=asyncio.subprocess.PIPE,\n                stderr=asyncio.subprocess.PIPE\n            )
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
             
             stdout, stderr = await process.communicate()
             
@@ -309,9 +404,18 @@ class ProductionBackupSystem:
             backup_path = os.path.join(temp_dir, backup_filename)
             
             # Export all resources from namespace
-            cmd = [\n                "kubectl", "get", "all,configmap,secret,pvc",\n                "-n", job.source_path,\n                "-o", "yaml",\n                "--export"\n            ]
+            cmd = [
+                "kubectl", "get", "all,configmap,secret,pvc",
+                "-n", job.source_path,
+                "-o", "yaml",
+                "--export"
+            ]
             
-            process = await asyncio.create_subprocess_exec(\n                *cmd,\n                stdout=asyncio.subprocess.PIPE,\n                stderr=asyncio.subprocess.PIPE\n            )
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
             
             stdout, stderr = await process.communicate()
             
@@ -550,7 +654,11 @@ class ProductionBackupSystem:
             # PostgreSQL restore
             cmd = ["psql", target_db or "reliquary", "-f", backup_file]
             
-            process = await asyncio.create_subprocess_exec(\n                *cmd,\n                stdout=asyncio.subprocess.PIPE,\n                stderr=asyncio.subprocess.PIPE\n            )
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
             
             stdout, stderr = await process.communicate()
             
@@ -567,7 +675,11 @@ class ProductionBackupSystem:
         
         cmd = ["tar", "-xzf", backup_file, "-C", target_path or "/"]
         
-        process = await asyncio.create_subprocess_exec(\n            *cmd,\n            stdout=asyncio.subprocess.PIPE,\n            stderr=asyncio.subprocess.PIPE\n        )
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
         
         stdout, stderr = await process.communicate()
         
@@ -581,7 +693,11 @@ class ProductionBackupSystem:
         
         cmd = ["kubectl", "apply", "-f", backup_file]
         
-        process = await asyncio.create_subprocess_exec(\n            *cmd,\n            stdout=asyncio.subprocess.PIPE,\n            stderr=asyncio.subprocess.PIPE\n        )
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
         
         stdout, stderr = await process.communicate()
         

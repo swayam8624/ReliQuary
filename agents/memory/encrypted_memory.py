@@ -589,15 +589,19 @@ class EncryptedMemory:
                     
                     entry_ids.append(entry_data["entry_id"])
                 
-                except Exception:
+                except (json.JSONDecodeError, KeyError, IOError, OSError):
+                    # Specific exceptions for file reading and JSON parsing
                     continue
             
             # Sort by creation time (newest first)
             entry_ids.sort(reverse=True)
             return entry_ids
         
+        except (OSError, IOError) as e:
+            self.logger.error(f"Query failed due to file system error: {e}")
+            return []
         except Exception as e:
-            self.logger.error(f"Query failed: {e}")
+            self.logger.error(f"Query failed due to unexpected error: {e}")
             return []
     
     async def _delete_persistent_entry(self, entry_id: str):
@@ -606,8 +610,10 @@ class EncryptedMemory:
             entry_file = self.memory_path / f"{entry_id}.mem"
             if entry_file.exists():
                 entry_file.unlink()
+        except (OSError, IOError) as e:
+            self.logger.error(f"Failed to delete persistent entry due to file system error: {e}")
         except Exception as e:
-            self.logger.error(f"Failed to delete persistent entry: {e}")
+            self.logger.error(f"Failed to delete persistent entry due to unexpected error: {e}")
     
     async def _cleanup_cache(self):
         """Cleanup old cache entries."""
