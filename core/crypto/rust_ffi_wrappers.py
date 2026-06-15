@@ -2,11 +2,14 @@
 
 import os
 import sys
+import hashlib
+import logging
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
+from cryptography.exceptions import InvalidTag
 import secrets
 from typing import Tuple
+
+logger = logging.getLogger(__name__)
 
 # Determine the correct library extension based on OS
 if sys.platform == "linux" or sys.platform == "linux2":
@@ -26,10 +29,8 @@ try:
     import reliquary_encryptor
     import reliquary_merkle
     RUST_MODULES_AVAILABLE = True
-    print("✅ Successfully imported Rust modules via PyO3.")
 except ImportError as e:
-    print(f"⚠️  Rust modules not available: {e}")
-    print("📝 Using Python fallback implementations...")
+    logger.debug("Rust crypto modules unavailable, using Python AES-GCM/Merkle fallbacks: %s", e)
     RUST_MODULES_AVAILABLE = False
 
 # --- Python Fallback Implementations ---
@@ -78,7 +79,10 @@ class PythonCryptoFallback:
             raise ValueError("Nonce must be 12 bytes for AES-GCM")
         
         aesgcm = AESGCM(key)
-        plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+        try:
+            plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+        except InvalidTag as exc:
+            raise ValueError("Decryption failed") from exc
         
         return list(plaintext)
     
@@ -93,54 +97,33 @@ class PythonCryptoFallback:
     
     @staticmethod
     def generate_kyber_keys() -> tuple[list, list]:
-        """Placeholder for Kyber key generation (not implemented in Python)."""
-        # Generate placeholder keys with proper sizes for Kyber-1024
-        public_key = secrets.token_bytes(1568)  # Kyber-1024 public key size
-        secret_key = secrets.token_bytes(3168)  # Kyber-1024 secret key size
-        return list(public_key), list(secret_key)
+        """Kyber is intentionally unavailable without the Rust extension."""
+        raise RuntimeError("Kyber requires the reliquary_encryptor Rust module. Run scripts/build_rust_modules.sh.")
     
     @staticmethod
     def encapsulate_kyber(public_key: list) -> tuple[list, list]:
-        """Placeholder for Kyber encapsulation."""
-        # Generate placeholder shared secret and ciphertext
-        shared_secret = secrets.token_bytes(32)  # 256-bit shared secret
-        ciphertext = secrets.token_bytes(1568)   # Kyber-1024 ciphertext size
-        return list(ciphertext), list(shared_secret)
+        """Kyber is intentionally unavailable without the Rust extension."""
+        raise RuntimeError("Kyber requires the reliquary_encryptor Rust module. Run scripts/build_rust_modules.sh.")
     
     @staticmethod
     def decapsulate_kyber(ciphertext: list, secret_key: list) -> list:
-        """Placeholder for Kyber decapsulation."""
-        # Generate consistent placeholder shared secret
-        shared_secret = secrets.token_bytes(32)
-        return list(shared_secret)
+        """Kyber is intentionally unavailable without the Rust extension."""
+        raise RuntimeError("Kyber requires the reliquary_encryptor Rust module. Run scripts/build_rust_modules.sh.")
     
     @staticmethod
     def generate_falcon_keys() -> tuple[list, list]:
-        """Placeholder for Falcon key generation."""
-        # Generate placeholder keys with proper sizes for Falcon-1024
-        public_key = secrets.token_bytes(1793)   # Falcon-1024 public key size
-        secret_key = secrets.token_bytes(2305)   # Falcon-1024 secret key size
-        return list(public_key), list(secret_key)
+        """Falcon is intentionally unavailable without the Rust extension."""
+        raise RuntimeError("Falcon requires the reliquary_encryptor Rust module. Run scripts/build_rust_modules.sh.")
     
     @staticmethod
     def sign_falcon(message: list, secret_key: list) -> list:
-        """Placeholder for Falcon signing."""
-        # Generate a deterministic-looking signature based on message
-        msg_hash = hashes.Hash(hashes.SHA256(), backend=default_backend())
-        msg_hash.update(bytes(message))
-        msg_digest = msg_hash.finalize()
-        
-        # Create a pseudo-signature (not cryptographically valid)
-        signature = msg_digest + secrets.token_bytes(32)  # 64 bytes total
-        return list(signature)
+        """Falcon is intentionally unavailable without the Rust extension."""
+        raise RuntimeError("Falcon requires the reliquary_encryptor Rust module. Run scripts/build_rust_modules.sh.")
     
     @staticmethod
     def verify_falcon(message: list, signature: list, public_key: list) -> bool:
-        """Placeholder for Falcon verification."""
-        # Simple verification that signature has the right structure
-        if len(signature) >= 32:
-            return True  # Always return True for placeholder
-        return False
+        """Falcon is intentionally unavailable without the Rust extension."""
+        raise RuntimeError("Falcon requires the reliquary_encryptor Rust module. Run scripts/build_rust_modules.sh.")
     
     @staticmethod
     def create_merkle_root(data_blocks: list) -> list:
@@ -155,16 +138,17 @@ class PythonCryptoFallback:
     
     @staticmethod
     def verify_merkle_proof(data_block: list, proof: list, root: list) -> bool:
-        """Verify Merkle proof using our Python implementation."""
-        from ..merkle_logging.merkle import verify_merkle_proof
-        
-        data_bytes = bytes(data_block)
-        proof_bytes = [bytes(p) for p in proof]
-        root_bytes = bytes(root)
-        
-        # Note: This requires an index for proper verification
-        # For now, we'll return a basic validity check
-        return len(proof_bytes) > 0 and len(root_bytes) == 32
+        """Verify a simplified lexicographic Merkle proof."""
+        current_hash = hashlib.sha256(bytes(data_block)).digest()
+
+        for proof_hash in proof:
+            sibling = bytes(proof_hash)
+            if current_hash < sibling:
+                current_hash = hashlib.sha256(current_hash + sibling).digest()
+            else:
+                current_hash = hashlib.sha256(sibling + current_hash).digest()
+
+        return current_hash == bytes(root)
 
 # Create the module interface
 if RUST_MODULES_AVAILABLE:
@@ -339,20 +323,20 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"AES-GCM test failed: {e}")
     
-    # Test Kyber (placeholder)
+    # Test Kyber when Rust modules are installed.
     try:
         kyber_pub, kyber_sec = generate_kyber_keys_rust()
         ciphertext, shared_secret1 = encapsulate_kyber_rust(kyber_pub)
         shared_secret2 = decapsulate_kyber_rust(ciphertext, kyber_sec)
         
-        print(f"Kyber test: Generated keys and performed encapsulation")
+        print("Kyber test: generated keys and performed encapsulation")
         print(f"Public key size: {len(kyber_pub)} bytes")
         print(f"Secret key size: {len(kyber_sec)} bytes")
         print(f"Shared secret size: {len(shared_secret1)} bytes")
     except Exception as e:
         print(f"Kyber test failed: {e}")
     
-    # Test Falcon (placeholder)
+    # Test Falcon when Rust modules are installed.
     try:
         falcon_pub, falcon_sec = generate_falcon_keys_rust()
         signature = sign_falcon_rust(test_data, falcon_sec)

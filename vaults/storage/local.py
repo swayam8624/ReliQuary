@@ -1,12 +1,13 @@
 # vaults/storage/local.py
 import os
+from typing import List, Optional
 from vaults.storage.base import StorageInterface
 
 class LocalFileStorage(StorageInterface):
     """
     A storage backend that saves and loads vaults from the local file system.
     """
-    def __init__(self, base_path: str):
+    def __init__(self, base_path: str = "/tmp/reliquary-vaults"):
         self.base_path = base_path
         os.makedirs(base_path, exist_ok=True)
 
@@ -33,6 +34,16 @@ class LocalFileStorage(StorageInterface):
         file_path = self._get_file_path(vault_id)
         if os.path.exists(file_path):
             os.remove(file_path)
+
+    def list_vaults(self, owner_id: Optional[str] = None) -> List[bytes]:
+        """Loads all local vault records. Owner filtering is handled by VaultManager."""
+        records = []
+        for filename in sorted(os.listdir(self.base_path)):
+            if not filename.endswith(".enc"):
+                continue
+            with open(os.path.join(self.base_path, filename), "rb") as f:
+                records.append(f.read())
+        return records
             
 if __name__ == "__main__":
     print("--- LocalFileStorage Test ---")

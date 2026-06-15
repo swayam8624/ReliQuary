@@ -3,15 +3,12 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use generic_array::{typenum::U32, GenericArray};
-use hex;
 use pqcrypto_falcon::falcon1024 as falcon;
 use pqcrypto_kyber::kyber1024 as kyber;
 use pqcrypto_traits::kem::{
     Ciphertext as KemCiphertext, PublicKey as KemPublicKey, SecretKey as KemSecretKey, SharedSecret,
 };
-use pqcrypto_traits::sign::{
-    DetachedSignature, PublicKey as SigPublicKey, SecretKey as SigSecretKey, SignedMessage,
-};
+use pqcrypto_traits::sign::{PublicKey as SigPublicKey, SecretKey as SigSecretKey, SignedMessage};
 use pyo3::prelude::*;
 use pyo3::Bound;
 // Kyber-1024 constants

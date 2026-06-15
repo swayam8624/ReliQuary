@@ -8,8 +8,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
+# C extensions and local native build products
 *.so
+*.dylib
+*.dll
+*.pyd
 
 # Distribution / packaging
 .Python
@@ -32,13 +35,14 @@ reliquary-env/  # Your Conda environment directory
 # Note: For collaborative projects, it's often better to include poetry.lock to ensure everyone uses the exact same dependencies.
 
 # IDEs and Editors
-.vscode/        # VSCode
+.vscode/
 .idea/          # IntelliJ / PyCharm
 *.sublime-project
 *.sublime-workspace
 .DS_Store       # macOS-specific
 *.bak
 *.swp
+*.tmp
 
 # -----------------------------------------------------------------------------
 # Rust
@@ -46,8 +50,9 @@ reliquary-env/  # Your Conda environment directory
 # Cargo build directory
 target/
 
-# Generated crates.io files
-Cargo.lock
+# Keep Cargo.lock when a Rust crate is promoted to a shipped binary. The
+# current PyO3 crates are library crates, so their lockfiles are not required.
+rust_modules/**/Cargo.lock
 
 # -----------------------------------------------------------------------------
 # Node.js
@@ -56,6 +61,7 @@ Cargo.lock
 node_modules/
 npm-debug.log*
 yarn-debug.log*
+pnpm-debug.log*
 
 # -----------------------------------------------------------------------------
 # Project-Specific Files
@@ -65,6 +71,9 @@ config/trust_defaults.json
 config/vault_trust_templates.yaml
 config/vaults/
 config/api_config.py # This should be read from env vars, not committed
+data/
+tmp/
+runtime/
 
 # Secret files
 *.env
@@ -73,17 +82,54 @@ config/api_config.py # This should be read from env vars, not committed
 
 # WebAuthn database
 auth/webauthn/keys.db
+*.db
+*.sqlite
+*.sqlite3
 
 # Merkle-logged audit trail and test data
 audit_logs/
+logs/
+apps/api/logs/
 vaults/test_data/
 vaults/data/
 test_logs/
+orchestrator_*/*
+*.mem
+
+# Notebook scratch files
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+Untitled*.ipynb
 
 # ZK-SNARKs temporary files
 # These files are often large and should not be in git
 zk/proofs/
 zk/verifier/groth16.json
+zk/verifier/*.json
+zk/verifier/*.wtns
+zk/verifier/*.zkey
+zk/verifier/*.ptau
+zk/verifier/build/
+zk/verifier/**/*.json
+zk/verifier/**/*.wtns
+zk/verifier/**/*.zkey
+zk/verifier/**/*.ptau
+zk/circom/
+
+# Benchmark and assessment output
+assessment-results/
+benchmark_results.md
+evaluation_tables.md
+*_benchmark_results.json
+*_results.json
+*_comparison.png
+*_success_rates.png
+*_response_times.png
+*_distribution.png
+*_analysis.png
+performance_comparison.png
+success_rates.png
+comprehensive_behavior_test_results.png
 
 # -----------------------------------------------------------------------------
 # Next.js Website

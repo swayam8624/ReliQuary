@@ -10,8 +10,13 @@ import os
 import secrets
 
 try:
-    from fido2.server import Fido2Server, PublicKeyCredentialRpEntity, RegistrationState
-    from fido2.webauthn import AttestationObject, AuthenticatorData, CollectedClientData
+    from fido2.server import (
+        AttestationObject,
+        AuthenticatorData,
+        CollectedClientData,
+        Fido2Server,
+        PublicKeyCredentialRpEntity,
+    )
     from fido2 import cbor
     FIDO2_AVAILABLE = True
 except ImportError:
@@ -69,7 +74,7 @@ class WebAuthnManager:
         
         # Initialize FIDO2 server if available
         if FIDO2_AVAILABLE:
-            rp = PublicKeyCredentialRpEntity(self.rp_id, self.rp_name)
+            rp = PublicKeyCredentialRpEntity(id=self.rp_id, name=self.rp_name)
             self.fido2_server = Fido2Server(rp)
         else:
             self.fido2_server = None

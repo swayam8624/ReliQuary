@@ -105,7 +105,7 @@ class AgentDecisionResponse(BaseModel):
     request_id: str = Field(..., description="Request identifier")
     agent_id: str = Field(..., description="Agent identifier")
     decision: str = Field(..., description="Decision result (allow/deny)")
-    confidence: str = Field(..., description="Confidence level")
+    confidence: float = Field(..., description="Decision confidence score", ge=0.0, le=1.0)
     reasoning: List[str] = Field(default_factory=list, description="Decision reasoning")
     processing_time: float = Field(..., description="Processing time in seconds")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Decision timestamp")

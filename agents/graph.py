@@ -7,13 +7,26 @@ different specialized agents and manages the decision-making process flow.
 """
 
 import logging
+import warnings
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
 
 # LangGraph and LangChain imports
+from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langchain_core.runnables import RunnableLambda
+
+warnings.filters = [
+    filter_entry
+    for filter_entry in warnings.filters
+    if not (
+        filter_entry[0] == "default"
+        and filter_entry[2] is LangChainPendingDeprecationWarning
+    )
+]
+warnings.simplefilter("ignore", LangChainPendingDeprecationWarning, append=False)
+
 from langgraph.graph import StateGraph, END
 
 # ReliQuary imports

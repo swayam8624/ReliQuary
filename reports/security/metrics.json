@@ -1,0 +1,63 @@
+{
+  "overall_score": 69,
+  "verdict": "promising but not production trustworthy",
+  "metrics": [
+    {
+      "name": "Runnable verification",
+      "score": 92,
+      "weight": 18,
+      "evidence": "Focused pytest matrix passes",
+      "brutal_note": "This is the strongest part only after the current cleanup; full-suite health is still unknown."
+    },
+    {
+      "name": "Rust crypto boundary",
+      "score": 82,
+      "weight": 14,
+      "evidence": "Rust PyO3 modules imported and PQC tests ran",
+      "brutal_note": "Good direction. Needs audited algorithms, test vectors, and release builds in CI."
+    },
+    {
+      "name": "Persistent storage",
+      "score": 72,
+      "weight": 14,
+      "evidence": "Postgres backend, schema creation, and restart-style storage test exist",
+      "brutal_note": "Real Postgres exists now, but encryption-at-rest semantics are still weak around secret payload handling."
+    },
+    {
+      "name": "API research surface",
+      "score": 78,
+      "weight": 12,
+      "evidence": "Auth, ZK, vault, context, trust, agents, and audit routers are exposed",
+      "brutal_note": "Breadth is good. Depth varies heavily across routers."
+    },
+    {
+      "name": "Artifact hygiene",
+      "score": 95,
+      "weight": 10,
+      "evidence": "0 generated artifacts found outside ignored build dirs",
+      "brutal_note": "Much better after cleanup. Keep generated proof/log/database files out of git forever."
+    },
+    {
+      "name": "Prototype debt",
+      "score": 23,
+      "weight": 14,
+      "evidence": "77 mock/TODO/placeholder/prototype markers found",
+      "brutal_note": "This is the ugly truth: the repo still contains lots of research scaffolding and simulated paths."
+    },
+    {
+      "name": "Secure defaults",
+      "score": 25,
+      "weight": 12,
+      "evidence": "57 insecure-default markers found",
+      "brutal_note": "CORS wildcards, simulation modes, dev passwords, and fake encrypted prefixes are not production security."
+    },
+    {
+      "name": "Implementation density",
+      "score": 97,
+      "weight": 6,
+      "evidence": "893/919 Python functions have non-pass bodies",
+      "brutal_note": "Quantity is not quality, but it shows this is not just a website."
+    }
+  ],
+  "pytest_output": "......sss..................                                              [100%]\n24 passed, 3 skipped in 0.64s\n"
+}

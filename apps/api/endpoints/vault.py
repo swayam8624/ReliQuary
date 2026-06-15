@@ -5,6 +5,7 @@ This module provides API endpoints for vault management operations.
 
 import json
 import logging
+import os
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
@@ -16,6 +17,7 @@ try:
     from vaults.manager import VaultManager
     from vaults.models.vault import Vault
     from vaults.storage.local import LocalStorage
+    from vaults.storage.postgres import PostgresStorage
 except ImportError:
     # Mock implementations for development
     class Vault:
@@ -148,7 +150,11 @@ def get_vault_manager() -> VaultManager:
     """Get the global vault manager instance"""
     global _vault_manager
     if _vault_manager is None:
-        storage = LocalStorage()
+        storage_backend = os.environ.get("RELIQUARY_STORAGE_BACKEND", "local").lower()
+        if storage_backend == "postgres":
+            storage = PostgresStorage()
+        else:
+            storage = LocalStorage(os.environ.get("RELIQUARY_LOCAL_VAULT_PATH", "/tmp/reliquary-vaults"))
         _vault_manager = VaultManager(storage)
     return _vault_manager
 
@@ -365,13 +371,13 @@ async def store_secret(secret_data: SecretCreate, vault_id: str, vault_manager: 
         )
         
         return SecretResponse(
-            secret_id=secret["secret_id"],
-            vault_id=secret["vault_id"],
-            secret_name=secret["secret_name"],
-            metadata=secret["metadata"],
-            created_at=datetime.fromisoformat(secret["created_at"]),
-            updated_at=datetime.fromisoformat(secret["updated_at"]),
-            version=secret["version"]
+            secret_id=secret.secret_id,
+            vault_id=secret.vault_id,
+            secret_name=secret.secret_name,
+            metadata=secret.metadata,
+            created_at=datetime.fromisoformat(secret.created_at),
+            updated_at=datetime.fromisoformat(secret.updated_at),
+            version=secret.version
         )
         
     except ValueError as e:
@@ -409,13 +415,13 @@ async def retrieve_secret(vault_id: str, secret_name: str, vault_manager: VaultM
         secret = vault_manager.retrieve_secret(vault_id, secret_name)
         
         return SecretResponse(
-            secret_id=secret["secret_id"],
-            vault_id=secret["vault_id"],
-            secret_name=secret["secret_name"],
-            metadata=secret["metadata"],
-            created_at=datetime.fromisoformat(secret["created_at"]),
-            updated_at=datetime.fromisoformat(secret["updated_at"]),
-            version=secret["version"]
+            secret_id=secret.secret_id,
+            vault_id=secret.vault_id,
+            secret_name=secret.secret_name,
+            metadata=secret.metadata,
+            created_at=datetime.fromisoformat(secret.created_at),
+            updated_at=datetime.fromisoformat(secret.updated_at),
+            version=secret.version
         )
         
     except ValueError as e:

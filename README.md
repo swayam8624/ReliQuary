@@ -1,352 +1,221 @@
-# RELIQUARY: Context-Bound, Trust-Evolved Cryptographic Memory System
+# ReliQuary
 
-![How Vulnerable Are You?](How%20Vulnerable%20Are%20You_.gif)
+ReliQuary is a research prototype for context-bound cryptographic memory:
+secret vaults, policy/context checks, multi-agent access decisions, Merkle audit
+trails, zero-knowledge context verification hooks, and Rust-backed crypto
+extensions.
 
-**The World's First Post-Quantum Memory Vault**
+The core idea is simple: sensitive data should not be released only because a
+caller knows an ID. Access should depend on the vault owner, current context,
+trust score, agent quorum decision, and an auditable trail of what happened.
 
-Secure your digital assets against today's threats and tomorrow's quantum computers. Built with military-grade cryptography, zero-knowledge proofs, and intelligent multi-agent consensus for unparalleled protection.
+## What This Project Is
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
-[![Rust](https://img.shields.io/badge/Rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-green.svg)](https://fastapi.tiangolo.com/)
+ReliQuary is not a static website and not a payment SaaS shell. The website is
+only a small companion surface. The real project is the backend and research
+runtime:
 
-## 🌐 Website
+- `apps/api/` exposes the runnable FastAPI research API.
+- `vaults/` stores vault and secret records through a storage adapter.
+- `core/crypto/` selects Python or Rust crypto backends.
+- `rust_modules/` contains PyO3 extensions for AES-GCM, Kyber, Falcon, and
+  Merkle primitives.
+- `agents/` contains multi-agent decision and consensus work.
+- `core/trust/` and `apps/api/services/` contain dynamic trust scoring and
+  context-verification plumbing.
+- `zk/` contains Circom-oriented context verification circuits and FastAPI
+  routes.
+- `auth/` contains OAuth/WebAuthn/DID/RBAC-oriented authentication work.
 
-**Visit our live website:** [https://reliquary-liqsqvz67-swayamsingal2022-3626s-projects.vercel.app](https://reliquary-liqsqvz67-swayamsingal2022-3626s-projects.vercel.app)
+Some research modules are still prototypes, but they are kept because they are
+part of the actual direction of the system. Generated artifacts, marketplace
+packaging, stale deployment manifests, logs, local databases, benchmark images,
+and proving outputs are intentionally removed from git.
 
-## 🚀 Features
+## What Works Now
 
-### 🔒 Post-Quantum Security
+- FastAPI app at `apps.api.main:app`.
+- Active API routers for auth, ZK, vaults, context, trust, agents, and audit.
+- Local vault creation, listing, secret storage, and retrieval.
+- AES-GCM and Merkle helpers.
+- Rust/PyO3 build path for native crypto modules.
+- Rust-backed Kyber/Falcon tests when the extensions are installed.
+- Minimal website that explains and drives the local research API.
+- Focused pytest coverage for crypto, vault behavior, and exposed research API
+  surface.
 
-- **PQC Algorithms**: Lattice-based cryptography resistant to quantum attacks
-- **Hybrid Encryption**: Combines classical and post-quantum algorithms for maximum security
-- **Key Rotation**: Automatic key rotation with zero-downtime transitions
-
-### 🧠 Intelligent Multi-Agent Consensus
-
-- **Distributed Verification**: Multi-agent system validates all transactions
-- **Adaptive Consensus**: Adjusts consensus mechanism based on network conditions
-- **Fault Tolerance**: Byzantine Fault Tolerance with 99.99% uptime guarantee
-
-### 🕵️ Zero-Knowledge Proofs
-
-- **Privacy-Preserving**: Verify without revealing sensitive information
-- **Efficient Proving**: Constant-time proof generation and verification
-- **Selective Disclosure**: Choose what information to reveal in each context
-
-### 📊 Performance Metrics
-
-| Metric                 | Score  | Industry Benchmark |
-| ---------------------- | ------ | ------------------ |
-| Security Rating        | A+     | A                  |
-| Load Time              | < 1.2s | < 3s               |
-| Lighthouse Performance | 98/100 | 90+                |
-| Mobile Score           | 95/100 | 85+                |
-| Accessibility          | 92/100 | 80+                |
-
-## 🛠 Getting Started
-
-### Prerequisites
-
-- `conda` (Anaconda or Miniconda)
-- `Rust` (with `cargo`)
-- `Node.js` (for SnarkJS, required for ZK proof generation/verification)
-- `Docker` and `Docker Compose`
-
-### Setup Instructions
-
-1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/SwayamSingal/ReliQuary.git
-   cd ReliQuary
-   ```
-
-2. **Conda Environment Setup:**
-
-   ```bash
-   conda create -n reliquary-env python=3.11 -y
-   conda activate reliquary-env
-   ```
-
-3. **Install Python Dependencies (using Poetry):**
-
-   ```bash
-   poetry install
-   ```
-
-4. **Install Rust Toolchain (if not already installed):**
-
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   source $HOME/.cargo/env
-   ```
-
-5. **Build Rust Modules:**
-
-   ```bash
-   # From the root of the project
-   cd rust_modules/encryptor
-   cargo build --release
-   cd ../merkle
-   cargo build --release
-   cd ../.. # Back to project root
-   ```
-
-6. **Install Node.js Dependencies for ZK (SnarkJS):**
-
-   ```bash
-   # Assuming Node.js is installed
-   npm install -g snarkjs
-   ```
-
-7. **Run the API (Development Mode):**
-
-   ```bash
-   docker-compose up --build
-   ```
-
-   The API will be accessible at `http://localhost:8000`.
-
-## 📁 Project Structure
-
-```
-.
-├── agents/                     # Multi-agent quorum system based on LangGraph
-├── apps/
-│   └── api/                    # FastAPI backend for the core enterprise API
-├── auth/                       # Identity management and API authentication
-├── config/                     # Centralized configuration management
-├── core/                       # Core logic including cryptography wrappers
-├── docker/                     # Dockerfiles and Compose configurations
-├── docs/                       # Developer guides and API reference
-├── k8s/                        # Kubernetes deployment manifests
-├── rust_modules/               # High-performance cryptographic backends in Rust
-├── scripts/                    # Utility scripts for development and operations
-├── sdk/                        # Client SDKs for enterprise integration
-├── tests/                      # Comprehensive test suite
-├── vaults/                     # Data models and pluggable storage management
-├── website/                    # Next.js website for documentation and marketing
-├── zk/                         # Zero-Knowledge Proof circuits and verifier
-├── Dockerfile.agent-orchestrator
-├── Dockerfile.platform
-├── Dockerfile.simple
-├── LICENSE
-├── README.md
-├── WORKFLOW.md
-├── docker-compose.yml
-├── pyproject.toml
-└── requirements.txt
-```
-
-## 🐳 Docker Deployment
-
-ReliQuary provides official Docker images for easy deployment across multiple environments. Our images are built for multiple architectures (AMD64, ARM64, ARMv7) and are available on Docker Hub.
-
-### Official Docker Images
-
-| Image                                                                                                           | Tag    | Description                |
-| --------------------------------------------------------------------------------------------------------------- | ------ | -------------------------- |
-| [swayamsingal/reliquary-platform](https://hub.docker.com/r/swayamsingal/reliquary-platform)                     | v5.0.0 | Main ReliQuary platform    |
-| [swayamsingal/reliquary-agent-orchestrator](https://hub.docker.com/r/swayamsingal/reliquary-agent-orchestrator) | v5.0.0 | Agent orchestrator service |
-| [swayamsingal/reliquary-website](https://hub.docker.com/r/swayamsingal/reliquary-website)                       | v1.0.0 | Marketing website          |
-
-### Pull and Run Docker Images
+## Quickstart
 
 ```bash
-# Pull the platform image
-docker pull swayamsingal/reliquary-platform:v5.0.0
-
-# Run the platform container
-docker run -d \
-  --name reliquary-platform \
-  -p 8000:8000 \
-  -e RELIQUARY_ENV=production \
-  swayamsingal/reliquary-platform:v5.0.0
-
-# Pull the website image
-docker pull swayamsingal/reliquary-website:v1.0.0
-
-# Run the website container
-docker run -d \
-  --name reliquary-website \
-  -p 3000:3000 \
-  swayamsingal/reliquary-website:v1.0.0
-```
-
-### Docker Compose Setup
-
-For a complete development environment, use our Docker Compose configuration:
-
-```bash
-# Clone the repository
 git clone https://github.com/SwayamSingal/ReliQuary.git
 cd ReliQuary
 
-# Start all services
-docker-compose up -d
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+python -m uvicorn apps.api.main:app --reload
 ```
 
-### Building from Source
+Open:
 
-To build Docker images from source:
+- API docs: http://localhost:8000/docs
+- Health: http://localhost:8000/health
+- Research surface: http://localhost:8000/
+
+Run the in-process research flow without starting a server:
 
 ```bash
-# Build platform image
-docker build -t reliquary/platform:v5.0.0 -f Dockerfile.platform --target production .
-
-# Build orchestrator image
-docker build -t reliquary/agent-orchestrator:v5.0.0 -f Dockerfile.agent-orchestrator .
-
-# Build website image
-docker build -t reliquary/website:v1.0.0 -f website/Dockerfile .
+python scripts/research_flow.py
 ```
 
-### Multi-Architecture Support
+That prints a vault record, context verification result, trust evaluation, and
+agent quorum decision. The default local context is intentionally incomplete,
+so the strict security agent may drive a denied access decision.
 
-Our Docker images support multiple architectures:
+## Local Postgres Vault Storage
 
-- AMD64 (x86_64)
-- ARM64 (aarch64)
-- ARMv7 (armhf)
+ReliQuary can now persist vault records in a local PostgreSQL database. The
+other storage backends remain research artifacts until they receive real
+implementations.
 
-To build for specific architectures:
+Start Postgres:
 
 ```bash
-# Build for ARM64
-docker buildx build --platform linux/arm64 -t reliquary/platform:v5.0.0 .
-
-# Build for multiple architectures
-docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t reliquary/platform:v5.0.0 .
+docker compose -f docker/docker-compose.yml up -d postgres
 ```
 
-## ☁️ Cloud Deployment
-
-### Railway (Recommended)
-
-The platform is currently deployed on Railway:
-
-**API Endpoint:** [https://reliquary-production.up.railway.app](https://reliquary-production.up.railway.app)
-
-To deploy to Railway:
+Run the database-backed vault flow:
 
 ```bash
-# Install Railway CLI
-npm install -g @railway/cli
-
-# Login to Railway
-railway login
-
-# Deploy
-railway up
+export RELIQUARY_STORAGE_BACKEND=postgres
+export DATABASE_URL=postgresql://reliquary:reliquary-dev-password@localhost:5432/reliquary
+python scripts/postgres_vault_flow.py
 ```
 
-### Self-Hosted Deployment
-
-For self-hosted deployments, you can use either Docker Compose or Kubernetes manifests:
-
-1. **Docker Compose:**
-
-   ```bash
-   docker-compose up --build
-   ```
-
-2. **Kubernetes:**
-   ```bash
-   kubectl apply -f k8s/
-   ```
-
-## 🔧 API Endpoints
-
-| Endpoint         | Method   | Description                 |
-| ---------------- | -------- | --------------------------- |
-| `/health`        | GET      | Health check endpoint       |
-| `/version`       | GET      | API version information     |
-| `/api/v1/vaults` | GET/POST | Manage cryptographic vaults |
-| `/api/v1/auth`   | POST     | Authentication endpoints    |
-| `/api/v1/audit`  | GET      | Audit log retrieval         |
-
-## 🧪 Testing
+Run the API against Postgres:
 
 ```bash
-# Run all tests
-python -m pytest tests/
-
-# Run specific test suite
-python -m pytest tests/test_api.py
-
-# Run with coverage
-python -m pytest --cov=core tests/
-
-# Run linting
-flake8 .
+RELIQUARY_STORAGE_BACKEND=postgres \
+DATABASE_URL=postgresql://reliquary:reliquary-dev-password@localhost:5432/reliquary \
+python -m uvicorn apps.api.main:app --reload
 ```
 
-## 📈 Performance Benchmarks
+The Postgres backend creates:
 
-| Test                     | Score  | Target |
-| ------------------------ | ------ | ------ |
-| Lighthouse Performance   | 98/100 | >95    |
-| First Contentful Paint   | < 1.2s | < 1.5s |
-| Largest Contentful Paint | < 2.1s | < 2.5s |
-| Cumulative Layout Shift  | 0.01   | < 0.1  |
-| Time to Interactive      | < 2.8s | < 3.5s |
+- `reliquary_vaults`
+- `reliquary_secrets`
 
-## 🔐 Security Features
+Create a vault:
 
-### Post-Quantum Cryptography
+```bash
+curl -s -X POST http://localhost:8000/vaults/ \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"research-vault","description":"local ReliQuary research vault","owner_id":"alice"}'
+```
 
-- **Kyber-1024**: Key encapsulation mechanism
-- **Falcon-1024**: Digital signature algorithm
-- **AES-GCM-256**: Symmetric encryption
+Evaluate context:
 
-### Zero-Knowledge Proofs
+```bash
+curl -s -X POST http://localhost:8000/context/verify \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "user_id": "alice",
+    "ip_address": "127.0.0.1",
+    "user_agent": "reliquary-research-client/1.0",
+    "timestamp": "2026-06-14T00:00:00Z",
+    "device_fingerprint": "local-device"
+  }'
+```
 
-- **ZK-SNARKs**: Privacy-preserving authentication
-- **Context Verification**: Device, location, and pattern matching
-- **Trust Scoring**: Dynamic trust assessment
+Evaluate trust:
 
-### Multi-Agent Consensus
+```bash
+curl -s -X POST http://localhost:8000/trust/evaluate \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "request_id": "trust-local-1",
+    "user_id": "alice",
+    "context_data": {"verified": true, "confidence_score": 0.92}
+  }'
+```
 
-- **Quorum-Based**: Distributed decision making
-- **Trust Engine**: Dynamic trust scoring
-- **Merkle Logging**: Immutable audit trails
+## Rust Crypto Modules
 
-## 🌐 Browser Support
+Rust is the right choice for ReliQuary's crypto boundary. Python is useful for
+orchestration, API work, and research iteration; Rust is better for native
+cryptographic primitives, memory-sensitive code, and packaging small extension
+modules. Rewriting the whole project in C++ would increase build complexity
+without improving the current product path.
 
-| Browser       | Version | Status       |
-| ------------- | ------- | ------------ |
-| Chrome        | 90+     | ✅ Supported |
-| Firefox       | 88+     | ✅ Supported |
-| Safari        | 14+     | ✅ Supported |
-| Edge          | 90+     | ✅ Supported |
-| Mobile Safari | 14+     | ✅ Supported |
-| Chrome Mobile | 90+     | ✅ Supported |
+Build and install the PyO3 modules into the active Python environment:
 
-## 📚 Additional Resources
+```bash
+source .venv/bin/activate
+scripts/build_rust_modules.sh
+```
 
-- [API Documentation](https://reliquary-production.up.railway.app/docs)
-- [Developer Guides](docs/)
-- [GitHub Repository](https://github.com/SwayamSingal/ReliQuary)
-- [Docker Hub Images](https://hub.docker.com/u/swayamsingal)
+That installs:
 
-## 🤝 Contributing
+- `reliquary_encryptor`
+- `reliquary_merkle`
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+Without these modules, AES-GCM and Merkle flows have Python fallbacks, but
+Kyber/Falcon operations do not fake post-quantum behavior.
 
-Refer to [WORKFLOW.md](WORKFLOW.md) for the development roadmap and contribution guidelines.
+## Website
 
-## 📄 License
+The website is intentionally minimal and has no pricing, Stripe, billing,
+authentication shell, testimonials, or random marketing routes.
 
-MIT License - see [LICENSE](LICENSE) file for details
+```bash
+cd website
+npm install
+npm run dev
+```
 
----
+Open http://localhost:3000.
 
-**Built with ❤️ by the ReliQuary Team**
+## Tests
 
-_Securing the digital future against quantum threats_
+```bash
+pytest -q tests/test_crypto.py tests/api/test_vault_access.py tests/api/test_research_surface.py tests/test_vault_storage_persistence.py
+```
+
+Optional integration paths:
+
+- Node SSS tests require `node_sss_service` to be running.
+- Circom proof regeneration requires external Circom/SnarkJS tooling.
+- Docker smoke requires a running Docker daemon.
+
+## Brutal Security / Trust Scorecard
+
+Generate the current security and trust report:
+
+```bash
+python scripts/security_metrics.py
+```
+
+Outputs:
+
+- `reports/security/REPORT.md`
+- `reports/security/metrics.json`
+- `reports/security/overall.svg`
+- `reports/security/scorecard.svg`
+
+The report is intentionally harsh. It penalizes mocked code paths, insecure
+defaults, dev credentials, simulation modes, and placeholder storage/security
+claims.
+
+## Circom / ZK
+
+The repo keeps ReliQuary circuits and ZK API hooks. It does not vendor the
+Circom compiler as a broken submodule. Install Circom/SnarkJS externally when
+you need to regenerate proving artifacts.
+
+```bash
+npm install -g snarkjs
+```
+
+Generated proving files such as `.zkey`, `.wtns`, `.ptau`, and proof JSON files
+are runtime artifacts and should not be committed.

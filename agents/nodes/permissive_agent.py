@@ -8,13 +8,26 @@ while still respecting critical security boundaries.
 
 import logging
 import time
+import warnings
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
 
 # LangGraph and LangChain imports
+from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langchain_core.runnables import RunnableLambda
+
+warnings.filters = [
+    filter_entry
+    for filter_entry in warnings.filters
+    if not (
+        filter_entry[0] == "default"
+        and filter_entry[2] is LangChainPendingDeprecationWarning
+    )
+]
+warnings.simplefilter("ignore", LangChainPendingDeprecationWarning, append=False)
+
 from langgraph.graph import StateGraph, END
 
 # ReliQuary imports
@@ -144,22 +157,44 @@ class PermissiveAgent(BaseAgent):
             # Run the decision graph
             result = await self.decision_graph.ainvoke(initial_state)
             
+            if isinstance(result, dict):
+                final_decision = result.get("final_decision", "deny")
+                confidence = result.get("confidence", "low")
+                confidence_value = getattr(confidence, "value", confidence)
+                trust_score_result = result.get("trust_score", trust_score)
+                reasoning = result.get("reasoning", [])
+                risk_factors = result.get("risk_factors", [])
+                access_factors = result.get("access_factors", [])
+                usability_factors = result.get("usability_factors", [])
+                flexibility_applied = result.get("flexibility_applied", [])
+                user_experience_score = result.get("user_experience_score", 0.0)
+            else:
+                final_decision = result.final_decision
+                confidence_value = result.confidence.value
+                trust_score_result = result.trust_score
+                reasoning = result.reasoning
+                risk_factors = result.risk_factors
+                access_factors = result.access_factors
+                usability_factors = result.usability_factors
+                flexibility_applied = result.flexibility_applied
+                user_experience_score = result.user_experience_score
+
             # Update metrics
             self.metrics.total_tasks_processed += 1
-            if result.final_decision == "allow":
+            if final_decision == "allow":
                 self.metrics.successful_verifications += 1
             
             return {
                 "agent_id": self.agent_id,
-                "decision": result.final_decision,
-                "confidence": result.confidence.value,
-                "trust_score": result.trust_score,
-                "reasoning": result.reasoning,
-                "risk_factors": result.risk_factors,
-                "access_factors": result.access_factors,
-                "usability_factors": result.usability_factors,
-                "flexibility_applied": result.flexibility_applied,
-                "user_experience_score": result.user_experience_score,
+                "decision": final_decision,
+                "confidence": confidence_value,
+                "trust_score": trust_score_result,
+                "reasoning": reasoning,
+                "risk_factors": risk_factors,
+                "access_factors": access_factors,
+                "usability_factors": usability_factors,
+                "flexibility_applied": flexibility_applied,
+                "user_experience_score": user_experience_score,
                 "timestamp": time.time()
             }
             

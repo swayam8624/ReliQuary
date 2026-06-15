@@ -6,40 +6,53 @@ This service is responsible for invoking the multi-agent quorum and receiving th
 import json
 import logging
 import asyncio
+import warnings
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from enum import Enum
 
-# Import agent components
-try:
-    from agents.decision_orchestrator import DecisionOrchestrator
-    from agents.graph import AgentGraph
-    from agents.agent_foundation import AgentRole
-except ImportError:
-    # Mock implementations for development
-    class DecisionOrchestrator:
-        def __init__(self):
-            pass
-        
-        async def make_decision(self, context: Dict[str, Any], user_id: str, resource_path: str) -> Dict[str, Any]:
-            return {
-                "decision": "approved",
-                "confidence": 0.95,
-                "agents_consulted": ["neutral", "permissive", "strict"],
-                "reasoning": "Context verified with high confidence",
-                "timestamp": datetime.now().isoformat()
-            }
-    
-    class AgentRole(Enum):
-        NEUTRAL = "neutral"
-        PERMISSIVE = "permissive"
-        STRICT = "strict"
-        WATCHDOG = "watchdog"
-    
-    class AgentGraph:
-        def __init__(self, agent_ids=None, agent_roles=None):
-            pass
+def _load_agent_components():
+    try:
+        from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
+
+        warnings.filters = [
+            filter_entry
+            for filter_entry in warnings.filters
+            if not (
+                filter_entry[0] == "default"
+                and filter_entry[2] is LangChainPendingDeprecationWarning
+            )
+        ]
+        warnings.simplefilter("ignore", LangChainPendingDeprecationWarning, append=False)
+        from agents.decision_orchestrator import DecisionOrchestrator
+        from agents.graph import AgentGraph
+        from agents.agent_foundation import AgentRole
+
+        return DecisionOrchestrator, AgentGraph, AgentRole
+    except ImportError:
+        class DecisionOrchestrator:
+            async def make_decision(self, context: Dict[str, Any], user_id: str, resource_path: str) -> Dict[str, Any]:
+                return {
+                    "decision": "approved",
+                    "confidence": 0.95,
+                    "agents_consulted": ["neutral", "permissive", "strict"],
+                    "reasoning": "Context verified with high confidence",
+                    "timestamp": datetime.now().isoformat()
+                }
+
+        class AgentRole(Enum):
+            NEUTRAL = "neutral"
+            PERMISSIVE = "permissive"
+            STRICT = "strict"
+            WATCHDOG = "watchdog"
+
+        class AgentGraph:
+            def __init__(self, agent_ids=None, agent_roles=None):
+                self.agent_ids = agent_ids or []
+                self.agent_roles = agent_roles or {}
+
+        return DecisionOrchestrator, AgentGraph, AgentRole
 
 
 class DecisionType(Enum):
@@ -83,6 +96,7 @@ class AgentOrchestrator:
     
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        DecisionOrchestrator, AgentGraph, AgentRole = _load_agent_components()
         self.decision_orchestrator = DecisionOrchestrator()
         # Initialize AgentGraph with default agents and roles
         agent_ids = ["neutral", "permissive", "strict", "watchdog"]

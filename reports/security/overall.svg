@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="260" viewBox="0 0 420 260">
+  <rect width="100%" height="100%" fill="#f8fafc" />
+  <text x="24" y="34" font-size="20" font-weight="700" fill="#111827">Overall Research Trust Score</text>
+  <circle cx="210" cy="140" r="86" fill="none" stroke="#e5e7eb" stroke-width="26" />
+  <circle cx="210" cy="140" r="86" fill="none" stroke="#ca8a04" stroke-width="26"
+    stroke-dasharray="540.4" stroke-dashoffset="167.5"
+    transform="rotate(-90 210 140)" />
+  <text x="210" y="132" text-anchor="middle" font-size="46" font-weight="800" fill="#111827">69</text>
+  <text x="210" y="164" text-anchor="middle" font-size="16" fill="#4b5563">out of 100</text>
+</svg>

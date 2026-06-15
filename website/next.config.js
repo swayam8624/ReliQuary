@@ -1,41 +1,26 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
+  output: 'standalone',
+  outputFileTracingRoot: __dirname,
   images: {
-    domains: ['reliquary.io', 'cdn.reliquary.io'],
     unoptimized: true,
   },
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: '/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,OPTIONS,PATCH,DELETE,POST,PUT' },
-          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         ],
       },
     ];
   },
-  async redirects() {
-    return [
-      {
-        source: '/docs',
-        destination: '/documentation',
-        permanent: true,
-      },
-      {
-        source: '/api',
-        destination: '/api-reference',
-        permanent: true,
-      },
-    ];
-  },
   env: {
-    SITE_URL: process.env.SITE_URL || 'https://reliquary-kairoki.vercel.app',
-    API_URL: process.env.API_URL || 'https://api.reliquary.io',
-    DOCS_URL: process.env.DOCS_URL || 'https://docs.reliquary.io',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   },
 };
 

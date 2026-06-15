@@ -7,11 +7,19 @@ from contextlib import asynccontextmanager
 import uvicorn
 import os
 import sys
+import warnings
 from datetime import datetime
 from typing import Dict, Any
 
 # Add the project root to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../'))
+
+warnings.filterwarnings(
+    "ignore",
+    message="'crypt' is deprecated and slated for removal in Python 3.13",
+    category=DeprecationWarning,
+    module=r"passlib\.utils.*",
+)
 
 from core.merkle_logging.writer import MerkleLogWriter
 from config_package import get_config
@@ -20,8 +28,12 @@ from config_package import get_config
 from auth.auth_endpoints import auth_router
 from auth.auth_middleware import setup_auth_middleware
 
-# Import ZK verification system
 from zk.zk_endpoints import zk_router
+from apps.api.endpoints.agent import router as agent_router
+from apps.api.endpoints.audit import router as audit_router
+from apps.api.endpoints.context import router as context_router
+from apps.api.endpoints.trust import router as trust_router
+from apps.api.endpoints.vault import router as vault_router
 
 # Global instances
 logger: MerkleLogWriter = None
@@ -82,6 +94,12 @@ def configure_routes(app: FastAPI) -> FastAPI:
     
     # Include ZK verification endpoints
     app.include_router(zk_router)
+
+    app.include_router(context_router)
+    app.include_router(trust_router)
+    app.include_router(agent_router)
+    app.include_router(audit_router)
+    app.include_router(vault_router)
     
     return app
 
@@ -129,6 +147,13 @@ app.include_router(auth_router)
 # Include ZK verification endpoints
 app.include_router(zk_router)
 
+# Include research subsystem endpoints
+app.include_router(context_router)
+app.include_router(trust_router)
+app.include_router(agent_router)
+app.include_router(audit_router)
+app.include_router(vault_router)
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -139,6 +164,23 @@ app.add_middleware(
 )
 
 # Health check endpoints
+@app.get("/", tags=["Health"])
+async def root() -> Dict[str, Any]:
+    """Research system landing endpoint."""
+    return {
+        "service": "reliquary-api",
+        "message": "ReliQuary is a context-bound cryptographic memory and secret-governance research system.",
+        "docs": "/docs",
+        "research_surfaces": {
+            "vaults": ["/vaults/", "/vaults/secrets"],
+            "context": ["/context/verify", "/context/zk/generate", "/zk/*"],
+            "trust": ["/trust/evaluate", "/trust/profile/{user_id}"],
+            "agents": ["/agents/register", "/agents/decision"],
+            "audit": ["/audit/", "/logs/summary"],
+            "auth": ["/auth/*"]
+        }
+    }
+
 @app.get("/health", tags=["Health"])
 async def health_check() -> Dict[str, Any]:
     """Basic health check endpoint."""

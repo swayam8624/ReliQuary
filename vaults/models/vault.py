@@ -43,6 +43,11 @@ class Vault(BaseModel):
         """Return the vault ID from metadata for API compatibility."""
         return str(self.metadata.vault_id)
 
+    @property
+    def created_at(self) -> datetime:
+        """Return the creation timestamp from metadata for API compatibility."""
+        return self.metadata.created_at
+
 
 class VaultVersion(BaseModel):
     """Version information for a vault."""

@@ -1,58 +1,62 @@
 {
   "name": "reliquary-website",
   "version": "1.0.0",
-  "description": "ReliQuary Professional Website - Landing Page, Pricing, and Documentation",
+  "private": true,
+  "description": "Minimal open-source ReliQuary demo website",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p ${PORT:-3000}",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
-    "export": "next build && next export"
+    "preview": "next build && next start -p ${PORT:-3000}",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@headlessui/react": "^1.7.17",
-    "@heroicons/react": "^2.0.18",
-    "@tailwindcss/aspect-ratio": "^0.4.2",
-    "@tailwindcss/forms": "^0.5.10",
-    "@tailwindcss/typography": "^0.5.16",
-    "autoprefixer": "^10.4.16",
-    "clsx": "^2.0.0",
-    "framer-motion": "^10.16.0",
-    "lucide-react": "^0.292.0",
-    "next": "^15.5.2",
-    "postcss": "^8.4.31",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tailwind-merge": "^2.0.0",
-    "tailwindcss": "^3.3.0",
-    "yaml": "^2.8.1"
+    "next": "^16.2.9",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@types/node": "^20.19.11",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "eslint": "^8.52.0",
-    "eslint-config-next": "^14.0.0",
+    "eslint-config-next": "^15.5.2",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
     "typescript": "^5.2.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
   "keywords": [
     "cryptography",
-    "post-quantum",
     "security",
-    "enterprise",
-    "multi-agent",
-    "consensus",
-    "zero-knowledge",
-    "blockchain"
+    "vault",
+    "secrets",
+    "audit-log",
+    "zero-knowledge"
   ],
-  "author": "ReliQuary Team",
+  "author": "ReliQuary contributors",
   "license": "MIT",
-  "homepage": "https://reliquary.io",
   "repository": {
     "type": "git",
-    "url": "https://github.com/reliquary/reliquary-platform.git"
+    "url": "https://github.com/SwayamSingal/ReliQuary.git"
   }
 }

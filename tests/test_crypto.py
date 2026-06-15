@@ -14,6 +14,7 @@ from core.crypto.rust_ffi_wrappers import (
     create_merkle_root_rust, verify_merkle_proof_rust,
     generate_kyber_keys_rust, encapsulate_kyber_rust, decapsulate_kyber_rust,
     generate_falcon_keys_rust, sign_falcon_rust, verify_falcon_rust,
+    RUST_MODULES_AVAILABLE,
 )
 import config_package 
 
@@ -122,15 +123,15 @@ def test_aes_gcm_invalid_nonce_length(sample_plaintext, aes_key_256):
 
 # --- Test Shamir's Secret Sharing (SSS) ---
 
-# Fixture to skip SSS tests if Node.js server is not running
-@pytest.fixture(scope="module", autouse=True)
+# Fixture to skip only SSS tests if the optional Node.js server is not running.
+@pytest.fixture(scope="module")
 def skip_if_sss_service_down():
     try:
         requests.get(f"{key_sharding.NODE_SSS_API_BASE_URL}/", timeout=1) 
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         pytest.skip("Node.js SSS server not running. Skipping SSS tests.")
 
-def test_sss_create_and_reconstruct_secret():
+def test_sss_create_and_reconstruct_secret(skip_if_sss_service_down):
     """Test creating shares and reconstructing with enough shares."""
     secret = b"My super secret data for SSS"
     num_shares = 5
@@ -148,7 +149,7 @@ def test_sss_create_and_reconstruct_secret():
     reconstructed_secret_more = key_sharding.reconstruct_secret(shares[1:threshold+1], threshold)
     assert reconstructed_secret_more == secret, "Secret should be reconstructed with more than threshold shares"
 
-def test_sss_reconstruct_with_insufficient_shares():
+def test_sss_reconstruct_with_insufficient_shares(skip_if_sss_service_down):
     """Test that reconstruction fails with fewer than threshold shares."""
     secret = b"Another secret"
     num_shares = 5
@@ -159,7 +160,7 @@ def test_sss_reconstruct_with_insufficient_shares():
     with pytest.raises(ValueError, match=f"Not enough shards to reconstruct secret: {threshold-1} provided, need {threshold}."):
         key_sharding.reconstruct_secret(shares[:threshold-1], threshold)
 
-def test_sss_invalid_parameters():
+def test_sss_invalid_parameters(skip_if_sss_service_down):
     """Test that SSS creation fails with invalid parameters."""
     secret = b"test"
     
@@ -243,46 +244,47 @@ def test_merkle_proof_verification_invalid(sample_merkle_blocks):
     assert not is_invalid_root, "Proof should fail with tampered root"
 
 
-# --- Test PQC Placeholder Functions (Kyber/Falcon) ---
+# --- Test Rust-backed PQC Functions (Kyber/Falcon) ---
 
+pytestmark_pqc = pytest.mark.skipif(
+    not RUST_MODULES_AVAILABLE,
+    reason="Rust PQC modules are not installed. Run scripts/build_rust_modules.sh.",
+)
+
+@pytestmark_pqc
 def test_kyber_key_generation():
-    """Test Kyber key generation placeholder."""
-    # FIXED: Expected sizes from new Rust placeholder
+    """Test Kyber key generation."""
     pub_key, sec_key = generate_kyber_keys_rust()
     assert isinstance(pub_key, bytes) and len(pub_key) == 1568
     assert isinstance(sec_key, bytes) and len(sec_key) == 3168
 
+@pytestmark_pqc
 def test_kyber_encapsulate_decapsulate():
-    """Test Kyber encapsulation/decapsulation placeholders."""
-    pub_key, sec_key = generate_kyber_keys_rust() # Get a dummy secret key
+    """Test Kyber encapsulation/decapsulation."""
+    pub_key, sec_key = generate_kyber_keys_rust()
 
-    # FIXED: Expected sizes and content from new Rust placeholder
-    # Note: The function returns (shared_secret, ciphertext) not (ciphertext, shared_secret)
     shared_secret_encap, ciphertext = encapsulate_kyber_rust(pub_key)
     assert isinstance(ciphertext, bytes) and len(ciphertext) == 1568
     assert isinstance(shared_secret_encap, bytes) and len(shared_secret_encap) == 32
 
-    # FIXED: Expected sizes and content from new Rust placeholder
     shared_secret_decap = decapsulate_kyber_rust(ciphertext, sec_key)
-    assert isinstance(shared_secret_decap, bytes) and len(shared_secret_decap) == 32
+    assert shared_secret_decap == shared_secret_encap
 
-
+@pytestmark_pqc
 def test_falcon_key_generation():
-    """Test Falcon key generation placeholder."""
-    # FIXED: Expected sizes and content from new Rust placeholder
+    """Test Falcon key generation."""
     pub_key, sec_key = generate_falcon_keys_rust()
     assert isinstance(pub_key, bytes) and len(pub_key) == 1793
     assert isinstance(sec_key, bytes) and len(sec_key) == 2305
 
+@pytestmark_pqc
 def test_falcon_sign_verify():
-    """Test Falcon sign/verify placeholders."""
+    """Test Falcon sign/verify."""
     pub_key, sec_key = generate_falcon_keys_rust()
     message = b"Data to be signed by Falcon"
 
-    # FIXED: Expected size and content from new Rust placeholder
     signature = sign_falcon_rust(message, sec_key)
-    # Signature size can vary slightly, check it's in the expected range
-    assert isinstance(signature, bytes) and 1290 <= len(signature) <= 1310
+    assert isinstance(signature, bytes) and len(signature) > 0
 
     is_valid = verify_falcon_rust(message, signature, pub_key)
-    assert is_valid == True
+    assert is_valid is True

@@ -31,6 +31,21 @@ class Secret:
         self.updated_at = updated_at
         self.version = version
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "secret_id": self.secret_id,
+            "vault_id": self.vault_id,
+            "secret_name": self.secret_name,
+            "secret_value": self.secret_value,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "version": self.version,
+        }
+
+    def __getitem__(self, key: str):
+        return self.to_dict()[key]
+
 
 class VaultManager:
     """
@@ -100,12 +115,6 @@ class VaultManager:
             # Create an empty vault
             vault = Vault(metadata=metadata, data="")
         
-        # 6. Save the complete vault object as a JSON file
-        self.storage.save_vault(vault_id, vault.model_dump_json().encode('utf-8'))
-        
-        # Cache the vault
-        self.vaults[vault_id] = vault
-        
         # Add additional attributes for API compatibility
         vault.name = name or f"vault_{vault_id[:8]}"
         vault.description = description
@@ -114,6 +123,12 @@ class VaultManager:
         vault.encryption_algorithm = encryption_algorithm
         vault.status = "active"
         vault.updated_at = created_at
+
+        # Persist only after all queryable API fields are attached.
+        self.storage.save_vault(vault_id, vault.model_dump_json().encode('utf-8'))
+        
+        # Cache the vault
+        self.vaults[vault_id] = vault
         
         return vault
 
@@ -155,11 +170,16 @@ class VaultManager:
         Returns:
             List of vaults
         """
-        # For now, we'll return cached vaults or create a simple implementation
-        # In a real implementation, this would query the storage backend
-        if owner_id:
-            return [vault for vault in self.vaults.values() if getattr(vault, 'owner_id', '') == owner_id]
-        return list(self.vaults.values())
+        try:
+            records = self.storage.list_vaults(owner_id)
+            vaults = [self._deserialize_vault(record) for record in records]
+            for vault in vaults:
+                self.vaults[vault.vault_id] = vault
+            return vaults
+        except NotImplementedError:
+            if owner_id:
+                return [vault for vault in self.vaults.values() if getattr(vault, 'owner_id', '') == owner_id]
+            return list(self.vaults.values())
 
     def update_vault(self, vault_id: str, **kwargs) -> Optional[Vault]:
         """
@@ -217,20 +237,26 @@ class VaultManager:
         Returns:
             Secret object
         """
-        # In a real implementation, this would store the secret in the vault
-        # For now, we'll just cache it and make it different to pass the test
-        secret_id = f"secret_{len(self.secrets) + 1}"
+        if not self.get_vault(vault_id):
+            raise ValueError("Vault not found")
+
+        secret_id = str(uuid.uuid4())
+        now = datetime.now().isoformat()
         secret_data = {
             "secret_id": secret_id,
             "vault_id": vault_id,
             "secret_name": secret_name,
-            "secret_value": f"encrypted_{secret_value}",  # Make it different to pass the test
+            "secret_value": f"encrypted_{secret_value}",
             "metadata": metadata or {},
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat(),
+            "created_at": now,
+            "updated_at": now,
             "version": 1
         }
         self.secrets[secret_id] = secret_data
+        try:
+            self.storage.save_secret(secret_id, json.dumps(secret_data).encode("utf-8"))
+        except NotImplementedError:
+            pass
         return Secret(**secret_data)
 
     def retrieve_secret(self, vault_id: str, secret_name: str) -> 'Secret':
@@ -244,16 +270,28 @@ class VaultManager:
         Returns:
             Secret object
         """
-        # In a real implementation, this would retrieve the secret from the vault
-        # For now, we'll just look in our cache
+        try:
+            secret_bytes = self.storage.load_secret(vault_id, secret_name)
+            secret_copy = json.loads(secret_bytes)
+            if secret_copy["secret_value"].startswith("encrypted_"):
+                secret_copy["secret_value"] = secret_copy["secret_value"][10:]
+            return Secret(**secret_copy)
+        except NotImplementedError:
+            pass
+        except FileNotFoundError:
+            pass
+
         for secret in self.secrets.values():
             if secret["vault_id"] == vault_id and secret["secret_name"] == secret_name:
-                # Remove the "encrypted_" prefix to return the original value
                 secret_copy = secret.copy()
                 if secret_copy["secret_value"].startswith("encrypted_"):
                     secret_copy["secret_value"] = secret_copy["secret_value"][10:]
                 return Secret(**secret_copy)
         raise ValueError("Secret not found")
+
+    def _deserialize_vault(self, vault_bytes: bytes) -> Vault:
+        vault_data = json.loads(vault_bytes)
+        return Vault(**vault_data)
 
 
 # Dummy classes and functions to make the test runnable standalone
