@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "scripts": {
+    "website:install": "npm --prefix website install",
+    "website:build": "npm --prefix website run build",
+    "website:dev": "npm --prefix website run dev",
+    "website:start": "npm --prefix website run start"
+  },
+  "dependencies": {
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
+  }
+}

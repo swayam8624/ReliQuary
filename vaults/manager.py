@@ -265,12 +265,16 @@ class VaultManager:
 
     def delete_vault(self, vault_id: str):
         """Deletes a vault from storage."""
+        if not self.get_vault(vault_id):
+            return False
+
         # Remove from cache
         if vault_id in self.vaults:
             del self.vaults[vault_id]
             
         # Remove from storage
         self.storage.delete_vault(vault_id)
+        return True
 
     def store_secret(self, vault_id: str, secret_name: str, secret_value: str, 
                      metadata: Dict[str, Any] = None) -> 'Secret':

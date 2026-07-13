@@ -1,6 +1,7 @@
 import json
 
 from vaults.manager import VaultManager
+from vaults.storage.local import LocalStorage
 
 
 class QueryableMemoryStorage:
@@ -57,3 +58,23 @@ def test_queryable_storage_survives_manager_restart():
     assert loaded_vault.vault_id == vault.vault_id
     assert loaded_secret.secret_value == "sk-real-secret"
     assert [item.vault_id for item in listed_vaults] == [vault.vault_id]
+
+
+def test_local_storage_secret_survives_new_manager(tmp_path):
+    storage = LocalStorage(str(tmp_path))
+    manager = VaultManager(storage)
+
+    vault = manager.create_vault(
+        name="mac-folder-vault",
+        description="stored on local disk",
+        owner_id="local-user",
+    )
+    manager.store_secret(vault.vault_id, "database-password", "do-not-lose-this")
+
+    fresh_manager = VaultManager(LocalStorage(str(tmp_path)))
+    loaded_vault = fresh_manager.get_vault(vault.vault_id)
+    loaded_secret = fresh_manager.retrieve_secret(vault.vault_id, "database-password")
+
+    assert loaded_vault.vault_id == vault.vault_id
+    assert loaded_secret.secret_value == "do-not-lose-this"
+    assert b"do-not-lose-this" not in next((tmp_path / "secrets" / vault.vault_id).glob("*.json")).read_bytes()

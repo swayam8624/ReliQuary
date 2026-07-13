@@ -16,8 +16,7 @@ from pydantic import BaseModel, Field
 try:
     from vaults.manager import VaultManager
     from vaults.models.vault import Vault
-    from vaults.storage.local import LocalStorage
-    from vaults.storage.postgres import PostgresStorage
+    from vaults.storage.factory import build_storage_from_env
 except ImportError:
     # Mock implementations for development
     class Vault:
@@ -36,6 +35,9 @@ except ImportError:
     class LocalStorage:
         def __init__(self, base_path: str = "/tmp/vaults"):
             self.base_path = base_path
+
+    def build_storage_from_env():
+        return LocalStorage(os.environ.get("RELIQUARY_LOCAL_VAULT_PATH", "/tmp/reliquary-vaults"))
     
     class VaultManager:
         def __init__(self, storage):
@@ -150,12 +152,7 @@ def get_vault_manager() -> VaultManager:
     """Get the global vault manager instance"""
     global _vault_manager
     if _vault_manager is None:
-        storage_backend = os.environ.get("RELIQUARY_STORAGE_BACKEND", "local").lower()
-        if storage_backend == "postgres":
-            storage = PostgresStorage()
-        else:
-            storage = LocalStorage(os.environ.get("RELIQUARY_LOCAL_VAULT_PATH", "/tmp/reliquary-vaults"))
-        _vault_manager = VaultManager(storage)
+        _vault_manager = VaultManager(build_storage_from_env())
     return _vault_manager
 
 

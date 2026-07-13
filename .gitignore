@@ -195,3 +195,5 @@ sdk/java/.DS_Store
 
 
 *.tex
+.next/
+.vercel
