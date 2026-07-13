@@ -110,7 +110,47 @@ The native GUI supports all three modes:
 scripts/run_mac_gui.sh
 ```
 
-More detail is in `docs/storage_and_gui.md`.
+The browser console supports local API-driven vault creation, text secret
+storage, trust-gated access requests, attacker simulation, and a decision log:
+
+```bash
+npm --prefix website install
+npm --prefix website run dev
+```
+
+Open http://localhost:3000 with the FastAPI server running at
+http://localhost:8000.
+
+The Vulkan ImGui console is the native visual computing surface:
+
+```bash
+scripts/run_brain_vault.sh
+```
+
+That app uses a real Vulkan swapchain through GLFW/MoltenVK and renders Dear
+ImGui graph nodes for storage, the trust gate, and answers. It can create
+vaults, store text secrets, store file/folder secrets, attach per-secret
+passwords, create share tokens, simulate remote attackers, request secrets, and
+refresh access events. Vulkan is used for the visual graph and control console;
+the backend still performs all cryptographic storage and access decisions.
+
+Full button-by-button usage, storage locations, trust-score calculation, and
+secret-sharing behavior are documented in
+[`docs/gui_and_visualizer_usage.md`](docs/gui_and_visualizer_usage.md). The
+older storage-focused notes remain in `docs/storage_and_gui.md`.
+
+## Research Paper
+
+The implementation-aligned paper source is
+`reliquary_complete_research_paper.tex`; the compiled PDF is
+`reliquary_complete_research_paper.pdf`. The older comprehensive filename is a
+compatibility wrapper that inputs the same canonical source.
+
+The paper now describes the actual repository state: local/Postgres/S3 vault
+storage, trust-gated allow/redact/deny decisions, share tokens, Mac GUI,
+website console, and the Vulkan ImGui visualizer. It deliberately avoids
+claims of absolute security, production zero-knowledge proofs, or guaranteed
+post-quantum protection unless the optional artifacts/modules are configured.
 
 ## Brain Vault Access Decisions
 
