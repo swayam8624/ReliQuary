@@ -197,5 +197,16 @@ sdk/java/.DS_Store
 
 
 *.tex
+!reliquary_complete_research_paper.tex
+!reliquary_comprehensive_research_paper.tex
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
 .next/
 .vercel
