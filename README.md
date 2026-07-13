@@ -50,10 +50,20 @@ and proving outputs are intentionally removed from git.
 git clone https://github.com/SwayamSingal/ReliQuary.git
 cd ReliQuary
 
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+scripts/bootstrap_mac.sh
+```
 
+Run the local in-process research flow without starting a server:
+
+```bash
+source .venv/bin/activate
+python scripts/research_flow.py
+```
+
+Run the API directly:
+
+```bash
+source .venv/bin/activate
 python -m uvicorn apps.api.main:app --reload
 ```
 
@@ -62,12 +72,6 @@ Open:
 - API docs: http://localhost:8000/docs
 - Health: http://localhost:8000/health
 - Research surface: http://localhost:8000/
-
-Run the in-process research flow without starting a server:
-
-```bash
-python scripts/research_flow.py
-```
 
 That prints a vault record, context verification result, trust evaluation, and
 agent quorum decision. The default local context is intentionally incomplete,
@@ -79,13 +83,16 @@ ReliQuary can now persist vault records in a local PostgreSQL database. The
 other storage backends remain research artifacts until they receive real
 implementations.
 
-Start Postgres:
+On macOS, the first-class container path uses Apple's `container` CLI, not
+Docker Desktop. `scripts/run_demo.sh` starts Postgres, builds the ReliQuary API
+image from `Containerfile`, starts the API, and runs a smoke test that creates a
+vault, stores a secret, retrieves it, and verifies context.
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d postgres
+scripts/run_demo.sh
 ```
 
-Run the database-backed vault flow:
+Run only the database-backed vault flow against any existing local Postgres:
 
 ```bash
 export RELIQUARY_STORAGE_BACKEND=postgres
@@ -105,6 +112,10 @@ The Postgres backend creates:
 
 - `reliquary_vaults`
 - `reliquary_secrets`
+
+Secret values are persisted as AES-GCM envelopes. Production runs must set a
+32-byte base64 key in `RELIQUARY_SECRET_KEY_B64`; local development uses
+`RELIQUARY_DEV_SECRET_KEY` so the clone-run path remains usable.
 
 Create a vault:
 
@@ -186,7 +197,7 @@ Optional integration paths:
 
 - Node SSS tests require `node_sss_service` to be running.
 - Circom proof regeneration requires external Circom/SnarkJS tooling.
-- Docker smoke requires a running Docker daemon.
+- Apple container smoke requires `container` CLI on macOS.
 
 ## Brutal Security / Trust Scorecard
 

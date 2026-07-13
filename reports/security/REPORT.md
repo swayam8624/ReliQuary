@@ -20,7 +20,7 @@ This project is now more than a website: it has a real API surface, Rust crypto 
 
 ### Persistent storage: 72/100
 - Evidence: Postgres backend, schema creation, and restart-style storage test exist
-- Brutal note: Real Postgres exists now, but encryption-at-rest semantics are still weak around secret payload handling.
+- Brutal note: Real Postgres exists now. Secret payloads use AES-GCM envelopes, but key management is still local/dev oriented.
 
 ### API research surface: 78/100
 - Evidence: Auth, ZK, vault, context, trust, agents, and audit routers are exposed
@@ -35,11 +35,11 @@ This project is now more than a website: it has a real API surface, Rust crypto 
 - Brutal note: This is the ugly truth: the repo still contains lots of research scaffolding and simulated paths.
 
 ### Secure defaults: 25/100
-- Evidence: 57 insecure-default markers found
-- Brutal note: CORS wildcards, simulation modes, dev passwords, and fake encrypted prefixes are not production security.
+- Evidence: 55 insecure-default markers found
+- Brutal note: CORS wildcards, simulation modes, dev passwords, and legacy compatibility paths are not production security.
 
 ### Implementation density: 97/100
-- Evidence: 893/919 Python functions have non-pass bodies
+- Evidence: 887/910 Python functions have non-pass bodies
 - Brutal note: Quantity is not quality, but it shows this is not just a website.
 
 ## Generated Graphs

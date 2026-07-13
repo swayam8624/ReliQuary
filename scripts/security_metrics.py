@@ -167,7 +167,7 @@ def main() -> None:
             72,
             14,
             "Postgres backend, schema creation, and restart-style storage test exist",
-            "Real Postgres exists now, but encryption-at-rest semantics are still weak around secret payload handling.",
+            "Real Postgres exists now. Secret payloads use AES-GCM envelopes, but key management is still local/dev oriented.",
         ),
         Metric(
             "API research surface",
@@ -195,7 +195,7 @@ def main() -> None:
             max(25, 90 - insecure_count * 8),
             12,
             f"{insecure_count} insecure-default markers found",
-            "CORS wildcards, simulation modes, dev passwords, and fake encrypted prefixes are not production security.",
+            "CORS wildcards, simulation modes, dev passwords, and legacy compatibility paths are not production security.",
         ),
         Metric(
             "Implementation density",

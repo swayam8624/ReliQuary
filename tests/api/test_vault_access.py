@@ -110,8 +110,9 @@ class TestVaultAccessAPI:
         )
         
         # Verify the stored data is encrypted by checking that it's different from the original
-        # This is a basic check - in a real implementation, we'd verify the encryption algorithm
         assert secret.secret_value != sample_secret_data["secret_value"]
+        assert secret.secret_value.startswith("reliquary:aes-gcm:v1:")
+        assert not secret.secret_value.startswith("encrypted_")
         assert len(secret.secret_value) > 0  # Should have some encrypted content
     
     def test_context_aware_access(self, vault_manager, sample_vault_data, sample_secret_data):

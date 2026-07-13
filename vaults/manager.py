@@ -3,6 +3,7 @@ import json
 import os
 import uuid
 import base64
+import hashlib
 import logging
 import traceback
 from typing import Optional, List, Dict, Any
@@ -16,6 +17,8 @@ from core.crypto.key_sharding import create_shares, reconstruct_secret
 
 # Basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+SECRET_ENVELOPE_PREFIX = "reliquary:aes-gcm:v1:"
 
 
 class Secret:
@@ -55,6 +58,52 @@ class VaultManager:
         self.storage = storage_backend
         self.vaults = {}  # In-memory cache for vaults
         self.secrets = {}  # In-memory cache for secrets
+
+    def _secret_encryption_key(self) -> bytes:
+        key_b64 = os.environ.get("RELIQUARY_SECRET_KEY_B64")
+        if key_b64:
+            try:
+                key = base64.b64decode(key_b64, validate=True)
+            except Exception as exc:
+                raise ValueError("RELIQUARY_SECRET_KEY_B64 must be valid base64") from exc
+            if len(key) != 32:
+                raise ValueError("RELIQUARY_SECRET_KEY_B64 must decode to exactly 32 bytes")
+            return key
+
+        if os.environ.get("RELIQUARY_ENV", "").lower() == "production":
+            raise RuntimeError("Set RELIQUARY_SECRET_KEY_B64 before storing secrets in production")
+
+        seed = os.environ.get("RELIQUARY_DEV_SECRET_KEY", "reliquary-local-dev-secret-key")
+        return hashlib.sha256(seed.encode("utf-8")).digest()
+
+    def _encrypt_secret_value(self, secret_value: str) -> str:
+        ciphertext, nonce, tag = encrypt(secret_value.encode("utf-8"), self._secret_encryption_key())
+        envelope = {
+            "ciphertext": base64.b64encode(ciphertext).decode("ascii"),
+            "nonce": base64.b64encode(nonce).decode("ascii"),
+            "tag": base64.b64encode(tag).decode("ascii"),
+        }
+        return SECRET_ENVELOPE_PREFIX + base64.b64encode(
+            json.dumps(envelope, separators=(",", ":")).encode("utf-8")
+        ).decode("ascii")
+
+    def _decrypt_secret_value(self, stored_value: str) -> str:
+        if stored_value.startswith(SECRET_ENVELOPE_PREFIX):
+            encoded = stored_value[len(SECRET_ENVELOPE_PREFIX):]
+            envelope = json.loads(base64.b64decode(encoded).decode("utf-8"))
+            plaintext = decrypt(
+                base64.b64decode(envelope["ciphertext"]),
+                base64.b64decode(envelope["nonce"]),
+                base64.b64decode(envelope["tag"]),
+                self._secret_encryption_key(),
+            )
+            return plaintext.decode("utf-8")
+
+        # Backward compatibility for records created before the AES-GCM envelope.
+        if stored_value.startswith("encrypted_"):
+            return stored_value[10:]
+
+        return stored_value
 
     def create_vault(self, name: str = None, description: str = "", owner_id: str = "", 
                      owner_did: str = None, plaintext_data: str = None, 
@@ -246,7 +295,7 @@ class VaultManager:
             "secret_id": secret_id,
             "vault_id": vault_id,
             "secret_name": secret_name,
-            "secret_value": f"encrypted_{secret_value}",
+            "secret_value": self._encrypt_secret_value(secret_value),
             "metadata": metadata or {},
             "created_at": now,
             "updated_at": now,
@@ -273,8 +322,7 @@ class VaultManager:
         try:
             secret_bytes = self.storage.load_secret(vault_id, secret_name)
             secret_copy = json.loads(secret_bytes)
-            if secret_copy["secret_value"].startswith("encrypted_"):
-                secret_copy["secret_value"] = secret_copy["secret_value"][10:]
+            secret_copy["secret_value"] = self._decrypt_secret_value(secret_copy["secret_value"])
             return Secret(**secret_copy)
         except NotImplementedError:
             pass
@@ -284,73 +332,10 @@ class VaultManager:
         for secret in self.secrets.values():
             if secret["vault_id"] == vault_id and secret["secret_name"] == secret_name:
                 secret_copy = secret.copy()
-                if secret_copy["secret_value"].startswith("encrypted_"):
-                    secret_copy["secret_value"] = secret_copy["secret_value"][10:]
+                secret_copy["secret_value"] = self._decrypt_secret_value(secret_copy["secret_value"])
                 return Secret(**secret_copy)
         raise ValueError("Secret not found")
 
     def _deserialize_vault(self, vault_bytes: bytes) -> Vault:
         vault_data = json.loads(vault_bytes)
         return Vault(**vault_data)
-
-
-# Dummy classes and functions to make the test runnable standalone
-class StorageInterface:
-    def save_vault(self, vault_id: str, data: bytes): pass
-    def load_vault(self, vault_id: str) -> bytes: pass
-    def delete_vault(self, vault_id: str): pass
-
-class LocalFileStorage(StorageInterface):
-    def __init__(self, base_path: str):
-        self.base_path = base_path
-        os.makedirs(base_path, exist_ok=True)
-    def _get_file_path(self, vault_id: str):
-        return os.path.join(self.base_path, f"{vault_id}.enc")
-    def save_vault(self, vault_id: str, data: bytes):
-        with open(self._get_file_path(vault_id), "wb") as f: f.write(data)
-    def load_vault(self, vault_id: str) -> bytes:
-        with open(self._get_file_path(vault_id), "rb") as f: return f.read()
-    def delete_vault(self, vault_id: str):
-        if os.path.exists(self._get_file_path(vault_id)): os.remove(self._get_file_path(vault_id))
-
-def create_shares(secret, num_shares, threshold): return [b'share1'.hex(), b'share2'.hex()]
-def reconstruct_secret(shares): return os.urandom(32)
-def encrypt(data, key): return (data, b'nonce', b'tag')
-def decrypt(data, nonce, tag, key): return data
-
-
-if __name__ == "__main__":
-    print("--- VaultManager Test ---")
-    
-    test_storage_path = os.path.join(os.getcwd(), 'vaults', 'test_data')
-    storage_backend = LocalFileStorage(base_path=test_storage_path)
-    manager = VaultManager(storage_backend)
-    
-    owner_did = "did:reliquary:testuser"
-    plaintext = "My deepest secrets and cryptographic keys."
-    print(f"Creating a new vault for owner: {owner_did}")
-    
-    new_vault_metadata = manager.create_vault(owner_did=owner_did, plaintext_data=plaintext)
-    vault_id_str = str(new_vault_metadata.metadata.vault_id)
-    print(f"✅ Vault created successfully with ID: {vault_id_str}")
-    
-    print("\nAttempting to retrieve and decrypt the vault...")
-    retrieved_vault = manager.get_vault(vault_id_str)
-    
-    if retrieved_vault:
-        print(f"✅ Vault retrieved successfully.")
-    else:
-        print("❌ Failed to retrieve vault.")
-        
-    print(f"\nAttempting to delete vault with ID: {vault_id_str}")
-    manager.delete_vault(vault_id_str)
-    
-    final_check = manager.get_vault(vault_id_str)
-    if final_check is None:
-        print(f"✅ Vault with ID {vault_id_str} deleted successfully.")
-    else:
-        print(f"❌ Vault deletion check failed.")
-
-    if os.path.exists(test_storage_path):
-        os.rmdir(test_storage_path)
-    print("✅ VaultManager test passed.")

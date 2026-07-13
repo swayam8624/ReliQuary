@@ -21,7 +21,7 @@
       "score": 72,
       "weight": 14,
       "evidence": "Postgres backend, schema creation, and restart-style storage test exist",
-      "brutal_note": "Real Postgres exists now, but encryption-at-rest semantics are still weak around secret payload handling."
+      "brutal_note": "Real Postgres exists now. Secret payloads use AES-GCM envelopes, but key management is still local/dev oriented."
     },
     {
       "name": "API research surface",
@@ -48,16 +48,16 @@
       "name": "Secure defaults",
       "score": 25,
       "weight": 12,
-      "evidence": "57 insecure-default markers found",
-      "brutal_note": "CORS wildcards, simulation modes, dev passwords, and fake encrypted prefixes are not production security."
+      "evidence": "55 insecure-default markers found",
+      "brutal_note": "CORS wildcards, simulation modes, dev passwords, and legacy compatibility paths are not production security."
     },
     {
       "name": "Implementation density",
       "score": 97,
       "weight": 6,
-      "evidence": "893/919 Python functions have non-pass bodies",
+      "evidence": "887/910 Python functions have non-pass bodies",
       "brutal_note": "Quantity is not quality, but it shows this is not just a website."
     }
   ],
-  "pytest_output": "......sss..................                                              [100%]\n24 passed, 3 skipped in 0.64s\n"
+  "pytest_output": "......sss..................                                              [100%]\n24 passed, 3 skipped in 0.52s\n"
 }

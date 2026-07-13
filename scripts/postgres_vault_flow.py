@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """Exercise ReliQuary vaults against a real PostgreSQL database.
 
-Set DATABASE_URL to an existing Postgres database, or run:
+Set DATABASE_URL to an existing Postgres database. On macOS, the supported
+local container path is:
 
-    docker compose -f docker/docker-compose.yml up -d postgres
+    scripts/container_run_postgres.sh
 
 Then:
 

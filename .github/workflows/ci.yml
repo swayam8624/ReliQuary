@@ -1,0 +1,45 @@
+name: ReliQuary CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Source, API, and Vault Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile import surface
+        run: python -m compileall apps auth core vaults agents zk scripts
+
+      - name: Run focused tests
+        run: |
+          pytest -q \
+            tests/test_crypto.py \
+            tests/api/test_vault_access.py \
+            tests/api/test_research_surface.py \
+            tests/test_vault_storage_persistence.py \
+            tests/test_context_proof.py \
+            tests/test_consensus_system.py
+
+      - name: Run in-process research flow
+        run: python scripts/research_flow.py

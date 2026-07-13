@@ -92,6 +92,7 @@ logs/
 apps/api/logs/
 vaults/test_data/
 vaults/data/
+zk/trust_data/
 test_logs/
 orchestrator_*/*
 *.mem
