@@ -5,10 +5,12 @@ This module calculates dynamic trust scores based on verified context and histor
 
 import json
 import logging
+import os
 from typing import Dict, Any, List, Optional
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from enum import Enum
+from pathlib import Path
 
 
 class TrustLevel(Enum):
@@ -39,6 +41,16 @@ class TrustScore:
     timestamp: datetime
     user_id: str
     explanation: str
+
+
+class RiskLevel(Enum):
+    """API-facing risk levels derived from the trust score."""
+
+    VERY_LOW = "very_low"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    VERY_HIGH = "very_high"
 
 
 class TrustScorer:
@@ -327,6 +339,136 @@ class TrustScorer:
             explanations.append("Moderate trust factors")
         
         return "; ".join(explanations)
+
+
+class TrustHistoryStore:
+    """Small JSON-backed trust history store for local/open-source runs."""
+
+    def __init__(self, path: Optional[str] = None):
+        default_path = Path("runtime/trust_history.json")
+        self.path = Path(path or os.environ.get("RELIQUARY_TRUST_HISTORY", default_path))
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
+    def append(self, user_id: str, record: Dict[str, Any]) -> None:
+        records = self._read_all()
+        records.setdefault(user_id, []).append(record)
+        self.path.write_text(json.dumps(records, indent=2, sort_keys=True), encoding="utf-8")
+
+    def history(
+        self,
+        user_id: str,
+        limit: int = 50,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+    ) -> List[Dict[str, Any]]:
+        records = self._read_all().get(user_id, [])
+        filtered = []
+        for record in records:
+            updated = datetime.fromisoformat(record["last_updated"])
+            if start_time and updated < start_time:
+                continue
+            if end_time and updated > end_time:
+                continue
+            filtered.append(record)
+        return filtered[-limit:]
+
+    def latest(self, user_id: str) -> Optional[Dict[str, Any]]:
+        records = self.history(user_id, limit=1)
+        return records[-1] if records else None
+
+    def _read_all(self) -> Dict[str, List[Dict[str, Any]]]:
+        if not self.path.exists():
+            return {}
+        try:
+            return json.loads(self.path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return {}
+
+
+class TrustScoringEngine:
+    """API adapter that evaluates trust and persists profile history."""
+
+    def __init__(self, config_file: Optional[str] = None, history_path: Optional[str] = None):
+        self.scorer = TrustScorer(config_file)
+        self.history_store = TrustHistoryStore(history_path)
+
+    def evaluate_trust(self, user_id: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        prior = self.history_store.history(user_id, limit=100)
+        history_data = [
+            {
+                "success": item["overall_trust_score"] >= 50.0,
+                "anomalous": item["risk_level"] in {"high", "very_high"},
+                "timestamp": item["last_updated"],
+            }
+            for item in prior
+        ]
+        score = self.scorer.calculate_trust_score(user_id, context, history_data)
+        record = self._record_from_score(score, prior)
+        self.history_store.append(user_id, record)
+        return record
+
+    def get_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
+        records = self.history_store.history(user_id, limit=100)
+        if not records:
+            return None
+        latest = records[-1]
+        return {
+            "user_id": user_id,
+            "current_trust_score": latest["overall_trust_score"],
+            "risk_level": latest["risk_level"],
+            "historical_scores": [record["overall_trust_score"] for record in records],
+            "trust_factors": latest["trust_factors"],
+            "created_at": records[0]["last_updated"],
+            "last_updated": latest["last_updated"],
+            "total_evaluations": len(records),
+        }
+
+    def get_history(
+        self,
+        user_id: str,
+        limit: int = 50,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+    ) -> List[Dict[str, Any]]:
+        return self.history_store.history(user_id, limit, start_time, end_time)
+
+    def get_current_score(self, user_id: str) -> Optional[Dict[str, Any]]:
+        return self.history_store.latest(user_id)
+
+    def _record_from_score(self, score: TrustScore, prior: List[Dict[str, Any]]) -> Dict[str, Any]:
+        factor_weights = self.scorer.config["weights"]
+        factor_values = asdict(score.factors)
+        trust_factors = [
+            {
+                "name": name,
+                "weight": factor_weights[name],
+                "score": value * 100.0,
+                "impact": (value - 0.5) * factor_weights[name] * 100.0,
+            }
+            for name, value in factor_values.items()
+        ]
+        historical_scores = [record["overall_trust_score"] for record in prior][-20:]
+        historical_scores.append(score.score * 100.0)
+        return {
+            "overall_trust_score": score.score * 100.0,
+            "risk_level": self._risk_from_trust_level(score.level).value,
+            "confidence_score": min(1.0, 0.55 + min(len(prior), 20) * 0.02),
+            "trust_factors": trust_factors,
+            "historical_scores": historical_scores,
+            "last_updated": score.timestamp.isoformat(),
+            "explanation": score.explanation,
+        }
+
+    @staticmethod
+    def _risk_from_trust_level(level: TrustLevel) -> RiskLevel:
+        mapping = {
+            TrustLevel.VERY_HIGH: RiskLevel.VERY_LOW,
+            TrustLevel.HIGH: RiskLevel.LOW,
+            TrustLevel.MEDIUM: RiskLevel.MEDIUM,
+            TrustLevel.LOW: RiskLevel.HIGH,
+            TrustLevel.VERY_LOW: RiskLevel.VERY_HIGH,
+        }
+        return mapping[level]
 
 
 # Global trust scorer instance

@@ -53,6 +53,14 @@ mypy = "^1.10.0"
 maturin = "^1.8.0"
 
 [tool.pytest.ini_options]
+testpaths = [
+    "tests/api",
+    "tests/test_storage_adapter_boundaries.py",
+    "tests/test_vault_storage_persistence.py",
+    "tests/test_context_proof.py",
+    "tests/test_crypto.py",
+    "tests/test_consensus_system.py",
+]
 filterwarnings = [
     "ignore:'crypt' is deprecated and slated for removal in Python 3.13:DeprecationWarning:passlib\\.utils.*",
 ]

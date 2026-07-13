@@ -6,17 +6,21 @@ This package contains components for trust scoring and evaluation.
 
 # Import trust components
 from .scorer import (
-    TrustScoringEngine,
-    TrustEvaluation,
     RiskLevel,
-    UserTrustProfile,
-    TrustFactor
+    TrustFactors,
+    TrustHistoryStore,
+    TrustLevel,
+    TrustScore,
+    TrustScorer,
+    TrustScoringEngine,
 )
 
 __all__ = [
-    "TrustScoringEngine",
-    "TrustEvaluation",
     "RiskLevel",
-    "UserTrustProfile",
-    "TrustFactor"
+    "TrustFactors",
+    "TrustHistoryStore",
+    "TrustLevel",
+    "TrustScore",
+    "TrustScorer",
+    "TrustScoringEngine",
 ]

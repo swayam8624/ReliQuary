@@ -6,15 +6,19 @@ This package contains components for trust rule validation and enforcement.
 
 # Import rule components
 from .validator import (
+    RuleType,
     RuleValidator,
-    TrustRule,
-    RuleValidationResult,
-    ValidationError
+    RulesValidator,
+    ValidationIssue,
+    ValidationResult,
+    ValidationSeverity,
 )
 
 __all__ = [
+    "RuleType",
     "RuleValidator",
-    "TrustRule",
-    "RuleValidationResult",
-    "ValidationError"
+    "RulesValidator",
+    "ValidationIssue",
+    "ValidationResult",
+    "ValidationSeverity",
 ]

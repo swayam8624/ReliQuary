@@ -3,7 +3,6 @@ Context API Endpoints for ReliQuary.
 This module provides API endpoints for context verification operations.
 """
 
-import json
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -11,45 +10,11 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, Field
 
-# Import context verification components
-try:
-    from apps.api.services.context_verifier import ContextVerifier, ContextData, VerificationResult
-except ImportError:
-    # Mock implementations for development
-    class ContextData:
-        def __init__(self, user_id: str, ip_address: str, user_agent: str, timestamp: str, 
-                     device_fingerprint: str, location_data: Dict[str, Any] = None, 
-                     access_patterns: list = None):
-            self.user_id = user_id
-            self.ip_address = ip_address
-            self.user_agent = user_agent
-            self.timestamp = timestamp
-            self.device_fingerprint = device_fingerprint
-            self.location_data = location_data
-            self.access_patterns = access_patterns
-    
-    class VerificationResult:
-        def __init__(self, request_id: str, verified: bool, confidence_score: float, 
-                     verified_components: list, timestamp: datetime, zk_proof_data: Dict[str, Any] = None):
-            self.request_id = request_id
-            self.verified = verified
-            self.confidence_score = confidence_score
-            self.verified_components = verified_components
-            self.timestamp = timestamp
-            self.zk_proof_data = zk_proof_data
-    
-    class ContextVerifier:
-        def __init__(self):
-            pass
-        
-        def verify_context(self, context_data: ContextData) -> VerificationResult:
-            return VerificationResult(
-                request_id=f"ctx_{int(datetime.now().timestamp() * 1000000)}",
-                verified=True,
-                confidence_score=0.95,
-                verified_components=["device_fingerprint", "timestamp"],
-                timestamp=datetime.now()
-            )
+from apps.api.services.context_verifier import (
+    ContextVerifier,
+    ContextData,
+    DeterministicProofBackend,
+)
 
 
 # Pydantic models for request/response validation
@@ -162,18 +127,23 @@ async def get_verification_status(request_id: str,
     Returns:
         Verification status
     """
-    # In a real implementation, this would retrieve the verification status from a database
-    # For now, we'll return a mock response
     try:
+        result = context_verifier.get_verification(request_id)
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Verification request '{request_id}' was not found"
+            )
         return ContextVerificationResponse(
-            request_id=request_id,
-            verified=True,
-            confidence_score=0.95,
-            verified_components=["device_fingerprint", "timestamp"],
-            timestamp=datetime.now(),
-            zk_proof_available=True
+            request_id=result.request_id,
+            verified=result.verified,
+            confidence_score=result.confidence_score,
+            verified_components=result.verified_components,
+            timestamp=result.timestamp,
+            zk_proof_available=result.zk_proof_data is not None
         )
-        
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -192,17 +162,19 @@ async def generate_zk_proof(proof_request: ZKProofRequest):
     Returns:
         Generated ZK proof
     """
-    # In a real implementation, this would generate an actual ZK proof
-    # For now, we'll return a mock response
     try:
+        start_time = datetime.now()
+        backend = DeterministicProofBackend()
+        proof_data = backend.generate_proof(proof_request.circuit_name, proof_request.inputs)
+        generation_time_ms = (datetime.now() - start_time).total_seconds() * 1000
         return ZKProofResponse(
             proof_id=f"proof_{int(datetime.now().timestamp() * 1000000)}",
-            proof={"pi_a": [1, 2], "pi_b": [[1, 2], [3, 4]], "pi_c": [5, 6]},
-            public_signals=["signal1", "signal2"],
-            verification_key={"vk_alpha_1": [1, 2], "vk_beta_2": [[1, 2], [3, 4]]},
+            proof=proof_data,
+            public_signals=proof_data["public_signals"],
+            verification_key=proof_data["verification_key"],
             circuit_name=proof_request.circuit_name,
-            generation_time_ms=150.5,
-            valid=True,
+            generation_time_ms=generation_time_ms,
+            valid=backend.verify_proof(proof_data),
             timestamp=datetime.now()
         )
         
@@ -224,12 +196,23 @@ async def verify_zk_proof(proof_data: Dict[str, Any]):
     Returns:
         Verification result
     """
-    # In a real implementation, this would verify an actual ZK proof
-    # For now, we'll return a mock response
     try:
+        start_time = datetime.now()
+        proof = proof_data.get("proof", proof_data)
+        backend = DeterministicProofBackend()
+        if proof.get("proof_system") != backend.proof_system:
+            return {
+                "valid": False,
+                "proof_system": proof.get("proof_system", "unsupported"),
+                "reason": "Only deterministic local proof envelopes are configured. Groth16 verification requires Circom/snarkjs artifacts.",
+                "verification_time_ms": (datetime.now() - start_time).total_seconds() * 1000,
+                "timestamp": datetime.now().isoformat()
+            }
+        valid = backend.verify_proof(proof)
         return {
-            "valid": True,
-            "verification_time_ms": 45.2,
+            "valid": valid,
+            "proof_system": backend.proof_system,
+            "verification_time_ms": (datetime.now() - start_time).total_seconds() * 1000,
             "timestamp": datetime.now().isoformat()
         }
         

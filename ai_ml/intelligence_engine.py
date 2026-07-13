@@ -125,7 +125,10 @@ class TrustPredictor:
             X = np.array(X)
             y = np.array(labels)
             
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            if len(X) < 5:
+                X_train, X_test, y_train, y_test = X, X, y, y
+            else:
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
             
             self.scaler = StandardScaler()
             X_train_scaled = self.scaler.fit_transform(X_train)
@@ -136,9 +139,9 @@ class TrustPredictor:
             
             y_pred = self.model.predict(X_test_scaled)
             metrics = {
-                "accuracy": accuracy_score(y_test, y_pred),
-                "precision": precision_score(y_test, y_pred, average='weighted'),
-                "recall": recall_score(y_test, y_pred, average='weighted')
+                "accuracy": float(accuracy_score(y_test, y_pred)),
+                "precision": float(precision_score(y_test, y_pred, average='weighted', zero_division=0)),
+                "recall": float(recall_score(y_test, y_pred, average='weighted', zero_division=0))
             }
             
             self.is_trained = True
@@ -235,8 +238,8 @@ class AnomalyDetector:
                 prediction = self.model.predict(features_scaled)[0]
                 anomaly_score = self.model.decision_function(features_scaled)[0]
                 
-                is_anomaly = prediction == -1
-                normalized_score = max(0, min(1, (anomaly_score + 0.5) / 1.0))
+                is_anomaly = bool(prediction == -1)
+                normalized_score = float(max(0, min(1, (anomaly_score + 0.5) / 1.0)))
                 
                 indicators = []
                 if is_anomaly:

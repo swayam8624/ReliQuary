@@ -63,6 +63,11 @@ class TrustEvaluation:
     evaluation_timestamp: int
     session_id: Optional[str] = None
 
+    @property
+    def confidence_score(self) -> float:
+        """Compatibility alias used by agent trust-check tooling."""
+        return self.confidence_level / 100.0 if self.confidence_level > 1.0 else self.confidence_level
+
 @dataclass
 class UserTrustProfile:
     """User's trust profile with historical data"""
@@ -74,6 +79,12 @@ class UserTrustProfile:
     last_evaluation: Optional[int] = None
     total_evaluations: int = 0
     compliance_violations: int = 0
+    created_at: Optional[float] = None
+
+    @property
+    def historical_scores(self) -> List[float]:
+        """Compatibility alias used by agent trust-check tooling."""
+        return self.trust_history
     
 class TrustScoringEngine:
     """
@@ -626,10 +637,15 @@ class TrustScoringEngine:
                 behavioral_baselines={},
                 risk_events=[],
                 total_evaluations=0,
-                compliance_violations=0
+                compliance_violations=0,
+                created_at=time.time()
             )
         
         return self.user_profiles[user_id]
+
+    def get_user_profile(self, user_id: str) -> UserTrustProfile:
+        """Public compatibility wrapper for tools that inspect trust history."""
+        return self._get_user_profile(user_id)
     
     def _save_user_profile(self, user_profile: UserTrustProfile):
         """Save user profile to disk."""

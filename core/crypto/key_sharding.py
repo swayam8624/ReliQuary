@@ -2,6 +2,7 @@
 
 import os
 import requests
+import secrets
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List
@@ -91,6 +92,68 @@ def reconstruct_key_from_shards(shards: List[KeyShard], threshold: int) -> bytes
 # Aliases for backward compatibility
 create_shares = split_key_into_shards
 reconstruct_secret = reconstruct_key_from_shards
+
+
+class KeyShardManager:
+    """Pure-Python Shamir secret sharing manager over GF(257)."""
+
+    prime = 257
+
+    def shard_key(self, key: bytes, num_shards: int = 3, threshold: int = 2) -> List[bytes]:
+        if not (2 <= threshold <= num_shards <= 255):
+            raise ValueError("Require 2 <= threshold <= num_shards <= 255.")
+
+        polynomials = []
+        for byte in key:
+            coefficients = [byte] + [secrets.randbelow(self.prime) for _ in range(threshold - 1)]
+            polynomials.append(coefficients)
+
+        shares = []
+        for x in range(1, num_shards + 1):
+            encoded_values = bytearray([x])
+            for coefficients in polynomials:
+                y = 0
+                for power, coefficient in enumerate(coefficients):
+                    y = (y + coefficient * pow(x, power, self.prime)) % self.prime
+                encoded_values.extend(y.to_bytes(2, "big"))
+            shares.append(bytes(encoded_values))
+        return shares
+
+    def reconstruct_key(self, shards: List[bytes], threshold: int = 2) -> bytes:
+        if len(shards) < threshold:
+            raise ValueError(f"Not enough shards to reconstruct secret: {len(shards)} provided, need {threshold}.")
+
+        selected = shards[:threshold]
+        value_count = (len(selected[0]) - 1) // 2
+        if any(len(share) != 1 + value_count * 2 for share in selected):
+            raise ValueError("All shards must have the same encoded length.")
+
+        points = []
+        for share in selected:
+            x = share[0]
+            values = [
+                int.from_bytes(share[1 + i * 2: 3 + i * 2], "big")
+                for i in range(value_count)
+            ]
+            points.append((x, values))
+
+        secret = bytearray()
+        for value_index in range(value_count):
+            total = 0
+            for i, (x_i, values_i) in enumerate(points):
+                numerator = 1
+                denominator = 1
+                for j, (x_j, _) in enumerate(points):
+                    if i == j:
+                        continue
+                    numerator = (numerator * (-x_j)) % self.prime
+                    denominator = (denominator * (x_i - x_j)) % self.prime
+                lagrange = numerator * pow(denominator, -1, self.prime)
+                total = (total + values_i[value_index] * lagrange) % self.prime
+            if total > 255:
+                raise ValueError("Invalid shard set reconstructed an out-of-byte-range value.")
+            secret.append(total)
+        return bytes(secret)
 
 # --- Optional local test ---
 

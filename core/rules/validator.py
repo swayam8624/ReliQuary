@@ -318,6 +318,38 @@ class RulesValidator:
                 rule_count=0
             )
 
+    def get_active_rules(self) -> List[Dict[str, Any]]:
+        """Return the shipped baseline trust policy rules used by the API."""
+        return [
+            {
+                "rule_id": "baseline_minimum_trust",
+                "name": "Minimum Trust Threshold",
+                "description": "Sensitive access requires a trust score at or above the medium threshold.",
+                "condition": "trust_score >= 50",
+                "weight": 1.0,
+                "enabled": True,
+            },
+            {
+                "rule_id": "remote_secret_requires_high_trust",
+                "name": "Remote Secret Access Threshold",
+                "description": "Secret access from non-local sessions requires high trust and verified context.",
+                "condition": "sensitivity == 'secret' and trust_score >= 90 and device_verified",
+                "weight": 1.0,
+                "enabled": True,
+            },
+            {
+                "rule_id": "owner_required_for_secret_reveal",
+                "name": "Owner Required For Secret Reveal",
+                "description": "A secret value is only revealed when the subject matches the vault owner.",
+                "condition": "subject.user_id == vault.owner_id",
+                "weight": 1.0,
+                "enabled": True,
+            },
+        ]
+
+
+RuleValidator = RulesValidator
+
 
 # Global rules validator instance
 _rules_validator = None

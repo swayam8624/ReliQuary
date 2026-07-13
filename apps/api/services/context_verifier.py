@@ -1,38 +1,26 @@
 """
-Context Verification Service for ReliQuary API.
-This service orchestrates the use of ZK circuits to verify context data provided by enterprise clients.
+Context verification service for ReliQuary.
+
+The active API path uses deterministic proof envelopes until a Groth16 circuit
+bundle is configured. These envelopes are not advertised as cryptographic ZK
+proofs; they are replayable development proofs that make request state
+auditable and tamper-detectable during local runs.
 """
 
+import hashlib
 import json
 import logging
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass
+import os
+from dataclasses import asdict, dataclass
 from datetime import datetime
-
-# Import ZK verification components
-try:
-    from zk.verifier.zk_runner import ZKRunner
-    from zk.verifier.zk_batch_verifier import ZKBatchVerifier
-except ImportError:
-    # Mock implementations for development
-    class ZKRunner:
-        def generate_proof(self, circuit_name: str, inputs: Dict[str, Any]) -> Dict[str, Any]:
-            return {
-                "proof": {"pi_a": [1, 2], "pi_b": [[1, 2], [3, 4]], "pi_c": [5, 6]},
-                "public_signals": ["signal1", "signal2"]
-            }
-        
-        def verify_proof(self, circuit_name: str, proof: Dict[str, Any], public_signals: List[str]) -> bool:
-            return True
-    
-    class ZKBatchVerifier:
-        def verify_batch(self, proofs: List[Dict[str, Any]]) -> List[bool]:
-            return [True] * len(proofs)
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class ContextVerificationRequest:
-    """Request for context verification"""
+    """Request for context verification."""
+
     user_id: str
     ip_address: str
     user_agent: str
@@ -41,9 +29,11 @@ class ContextVerificationRequest:
     location_data: Optional[Dict[str, Any]] = None
     access_patterns: Optional[List[str]] = None
 
+
 @dataclass
 class ContextVerificationResponse:
-    """Response for context verification"""
+    """Response for context verification."""
+
     request_id: str
     verified: bool
     confidence_score: float
@@ -51,9 +41,11 @@ class ContextVerificationResponse:
     timestamp: datetime
     zk_proof_data: Optional[Dict[str, Any]] = None
 
+
 @dataclass
 class ContextData:
-    """Context data for verification"""
+    """Context data for verification."""
+
     user_id: str
     ip_address: str
     user_agent: str
@@ -65,7 +57,8 @@ class ContextData:
 
 @dataclass
 class VerificationResult:
-    """Result of context verification"""
+    """Result of context verification."""
+
     request_id: str
     verified: bool
     confidence_score: float
@@ -74,374 +67,168 @@ class VerificationResult:
     zk_proof_data: Optional[Dict[str, Any]] = None
 
 
-class ContextVerificationService:
-    """Service for verifying context data using Zero-Knowledge proofs"""
-    
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-        self.zk_runner = ZKRunner()
-        self.zk_batch_verifier = ZKBatchVerifier()
-    
-    def verify_context(self, context_data: ContextData) -> VerificationResult:
-        """
-        Verify context data using ZK proofs.
-        
-        Args:
-            context_data: Context data to verify
-            
-        Returns:
-            Verification result with confidence score
-        """
-        request_id = f"ctx_{int(datetime.now().timestamp() * 1000000)}"
-        
-        try:
-            # Prepare verification components
-            verification_components = []
-            zk_proofs = []
-            
-            # Device fingerprint verification
-            device_proof = self._verify_device_fingerprint(context_data)
-            if device_proof:
-                verification_components.append("device_fingerprint")
-                zk_proofs.append(device_proof)
-            
-            # Timestamp verification
-            timestamp_proof = self._verify_timestamp(context_data)
-            if timestamp_proof:
-                verification_components.append("timestamp")
-                zk_proofs.append(timestamp_proof)
-            
-            # Location verification (if provided)
-            if context_data.location_data:
-                location_proof = self._verify_location(context_data)
-                if location_proof:
-                    verification_components.append("location")
-                    zk_proofs.append(location_proof)
-            
-            # Access pattern verification (if provided)
-            if context_data.access_patterns:
-                pattern_proof = self._verify_access_patterns(context_data)
-                if pattern_proof:
-                    verification_components.append("access_patterns")
-                    zk_proofs.append(pattern_proof)
-            
-            # Batch verify all ZK proofs
-            if zk_proofs:
-                verification_results = self.zk_batch_verifier.verify_batch(zk_proofs)
-                all_verified = all(verification_results)
-                
-                # Calculate confidence score based on number of verified components
-                confidence_score = len(verification_components) / 5.0  # Max 5 components
-                if not all_verified:
-                    confidence_score *= 0.5  # Reduce confidence if any proof fails
-            else:
-                all_verified = True
-                confidence_score = 0.2  # Minimal confidence if no ZK verification performed
-            
-            # Create verification result
-            result = VerificationResult(
-                request_id=request_id,
-                verified=all_verified,
-                confidence_score=confidence_score,
-                verified_components=verification_components,
-                timestamp=datetime.now(),
-                zk_proof_data={
-                    "proofs": zk_proofs,
-                    "verification_results": verification_results if zk_proofs else []
-                } if zk_proofs else None
-            )
-            
-            self.logger.info(f"Context verification completed for request {request_id}: {result.verified}")
-            return result
-            
-        except Exception as e:
-            self.logger.error(f"Context verification failed for request {request_id}: {str(e)}")
-            # Return a failed verification result
-            return VerificationResult(
-                request_id=request_id,
-                verified=False,
-                confidence_score=0.0,
-                verified_components=[],
-                timestamp=datetime.now()
-            )
-    
-    def _verify_device_fingerprint(self, context_data: ContextData) -> Optional[Dict[str, Any]]:
-        """
-        Generate ZK proof for device fingerprint verification.
-        
-        Args:
-            context_data: Context data containing device fingerprint
-            
-        Returns:
-            ZK proof data or None if generation failed
-        """
-        try:
-            inputs = {
-                "device_fingerprint": context_data.device_fingerprint,
-                "user_id": context_data.user_id
-            }
-            
-            proof = self.zk_runner.generate_proof("device_proof", inputs)
-            return proof
-        except Exception as e:
-            self.logger.warning(f"Device fingerprint verification failed: {str(e)}")
+class DeterministicProofBackend:
+    """Creates and verifies canonical hash proof envelopes for local runs."""
+
+    proof_system = "deterministic-dev-envelope"
+
+    @staticmethod
+    def canonical_payload(circuit_name: str, inputs: Dict[str, Any]) -> str:
+        return json.dumps(
+            {"circuit_name": circuit_name, "inputs": inputs},
+            sort_keys=True,
+            separators=(",", ":"),
+            default=str,
+        )
+
+    def generate_proof(self, circuit_name: str, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        canonical = self.canonical_payload(circuit_name, inputs)
+        input_digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        challenge = hashlib.sha256(f"{input_digest}:reliquary-context".encode("utf-8")).hexdigest()
+        return {
+            "proof_system": self.proof_system,
+            "circuit_name": circuit_name,
+            "input_digest": input_digest,
+            "challenge": challenge,
+            "proof": {"digest": input_digest, "challenge": challenge},
+            "public_signals": [input_digest],
+            "verification_key": {
+                "type": self.proof_system,
+                "hash": "sha256",
+                "scope": "local-development",
+            },
+        }
+
+    def verify_proof(self, proof_data: Dict[str, Any]) -> bool:
+        proof = proof_data.get("proof", {})
+        input_digest = proof_data.get("input_digest") or proof.get("digest")
+        challenge = proof_data.get("challenge") or proof.get("challenge")
+        expected = hashlib.sha256(f"{input_digest}:reliquary-context".encode("utf-8")).hexdigest()
+        return (
+            proof_data.get("proof_system") == self.proof_system
+            and isinstance(input_digest, str)
+            and proof_data.get("public_signals") == [input_digest]
+            and challenge == expected
+        )
+
+
+class ContextVerificationStore:
+    """JSON-backed store for verification request status."""
+
+    def __init__(self, path: Optional[str] = None):
+        default_path = Path("runtime/context_verifications.json")
+        self.path = Path(path or os.environ.get("RELIQUARY_CONTEXT_STORE", default_path))
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
+    def save(self, result: VerificationResult) -> None:
+        records = self._read_all()
+        payload = asdict(result)
+        payload["timestamp"] = result.timestamp.isoformat()
+        records[result.request_id] = payload
+        self.path.write_text(json.dumps(records, indent=2, sort_keys=True), encoding="utf-8")
+
+    def get(self, request_id: str) -> Optional[VerificationResult]:
+        payload = self._read_all().get(request_id)
+        if not payload:
             return None
-    
-    def _verify_timestamp(self, context_data: ContextData) -> Optional[Dict[str, Any]]:
-        """
-        Generate ZK proof for timestamp verification.
-        
-        Args:
-            context_data: Context data containing timestamp
-            
-        Returns:
-            ZK proof data or None if generation failed
-        """
+        return VerificationResult(
+            request_id=payload["request_id"],
+            verified=payload["verified"],
+            confidence_score=payload["confidence_score"],
+            verified_components=payload["verified_components"],
+            timestamp=datetime.fromisoformat(payload["timestamp"]),
+            zk_proof_data=payload.get("zk_proof_data"),
+        )
+
+    def _read_all(self) -> Dict[str, Dict[str, Any]]:
+        if not self.path.exists():
+            return {}
         try:
-            inputs = {
-                "timestamp": context_data.timestamp,
-                "user_id": context_data.user_id
-            }
-            
-            proof = self.zk_runner.generate_proof("timestamp_verifier", inputs)
-            return proof
-        except Exception as e:
-            self.logger.warning(f"Timestamp verification failed: {str(e)}")
-            return None
-    
-    def _verify_location(self, context_data: ContextData) -> Optional[Dict[str, Any]]:
-        """
-        Generate ZK proof for location verification.
-        
-        Args:
-            context_data: Context data containing location information
-            
-        Returns:
-            ZK proof data or None if generation failed
-        """
-        try:
-            inputs = {
-                "ip_address": context_data.ip_address,
-                "location_data": context_data.location_data or {},
-                "user_id": context_data.user_id
-            }
-            
-            proof = self.zk_runner.generate_proof("location_chain", inputs)
-            return proof
-        except Exception as e:
-            self.logger.warning(f"Location verification failed: {str(e)}")
-            return None
-    
-    def _verify_access_patterns(self, context_data: ContextData) -> Optional[Dict[str, Any]]:
-        """
-        Generate ZK proof for access pattern verification.
-        
-        Args:
-            context_data: Context data containing access patterns
-            
-        Returns:
-            ZK proof data or None if generation failed
-        """
-        try:
-            inputs = {
-                "access_patterns": context_data.access_patterns or [],
-                "user_id": context_data.user_id
-            }
-            
-            proof = self.zk_runner.generate_proof("pattern_match", inputs)
-            return proof
-        except Exception as e:
-            self.logger.warning(f"Access pattern verification failed: {str(e)}")
-            return None
+            return json.loads(self.path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return {}
 
 
 class ContextVerifier:
-    """Service for verifying context data using Zero-Knowledge proofs"""
-    
-    def __init__(self):
+    """Verifies supplied context and persists request status."""
+
+    def __init__(
+        self,
+        proof_backend: Optional[DeterministicProofBackend] = None,
+        store: Optional[ContextVerificationStore] = None,
+    ):
         self.logger = logging.getLogger(__name__)
-        self.zk_runner = ZKRunner()
-        self.zk_batch_verifier = ZKBatchVerifier()
-    
+        self.proof_backend = proof_backend or DeterministicProofBackend()
+        self.store = store or ContextVerificationStore()
+
     def verify_context(self, context_data: ContextData) -> VerificationResult:
-        """
-        Verify context data using ZK proofs.
-        
-        Args:
-            context_data: Context data to verify
-            
-        Returns:
-            Verification result with confidence score
-        """
         request_id = f"ctx_{int(datetime.now().timestamp() * 1000000)}"
-        
-        try:
-            # Prepare verification components
-            verification_components = []
-            zk_proofs = []
-            
-            # Device fingerprint verification
-            device_proof = self._verify_device_fingerprint(context_data)
-            if device_proof:
-                verification_components.append("device_fingerprint")
-                zk_proofs.append(device_proof)
-            
-            # Timestamp verification
-            timestamp_proof = self._verify_timestamp(context_data)
-            if timestamp_proof:
-                verification_components.append("timestamp")
-                zk_proofs.append(timestamp_proof)
-            
-            # Location verification (if provided)
-            if context_data.location_data:
-                location_proof = self._verify_location(context_data)
-                if location_proof:
-                    verification_components.append("location")
-                    zk_proofs.append(location_proof)
-            
-            # Access pattern verification (if provided)
-            if context_data.access_patterns:
-                pattern_proof = self._verify_access_patterns(context_data)
-                if pattern_proof:
-                    verification_components.append("access_patterns")
-                    zk_proofs.append(pattern_proof)
-            
-            # Batch verify all ZK proofs
-            if zk_proofs:
-                verification_results = self.zk_batch_verifier.verify_batch(zk_proofs)
-                all_verified = all(verification_results)
-                
-                # Calculate confidence score based on number of verified components
-                confidence_score = len(verification_components) / 5.0  # Max 5 components
-                if not all_verified:
-                    confidence_score *= 0.5  # Reduce confidence if any proof fails
-            else:
-                all_verified = True
-                confidence_score = 0.2  # Minimal confidence if no ZK verification performed
-            
-            # Create verification result
-            result = VerificationResult(
-                request_id=request_id,
-                verified=all_verified,
-                confidence_score=confidence_score,
-                verified_components=verification_components,
-                timestamp=datetime.now(),
-                zk_proof_data={
-                    "proofs": zk_proofs,
-                    "verification_results": verification_results if zk_proofs else []
-                } if zk_proofs else None
-            )
-            
-            self.logger.info(f"Context verification completed for request {request_id}: {result.verified}")
-            return result
-            
-        except Exception as e:
-            self.logger.error(f"Context verification failed for request {request_id}: {str(e)}")
-            # Return a failed verification result
-            return VerificationResult(
-                request_id=request_id,
-                verified=False,
-                confidence_score=0.0,
-                verified_components=[],
-                timestamp=datetime.now()
-            )
-    
-    def _verify_device_fingerprint(self, context_data: ContextData) -> Optional[Dict[str, Any]]:
-        """
-        Generate ZK proof for device fingerprint verification.
-        
-        Args:
-            context_data: Context data containing device fingerprint
-            
-        Returns:
-            ZK proof data or None if generation failed
-        """
-        try:
-            inputs = {
+        zk_proofs: List[Dict[str, Any]] = []
+        verified_components: List[str] = []
+
+        checks = [
+            ("device_fingerprint", "device_proof", {
                 "device_fingerprint": context_data.device_fingerprint,
-                "user_id": context_data.user_id
-            }
-            
-            proof = self.zk_runner.generate_proof("device_proof", inputs)
-            return proof
-        except Exception as e:
-            self.logger.warning(f"Device fingerprint verification failed: {str(e)}")
-            return None
-    
-    def _verify_timestamp(self, context_data: ContextData) -> Optional[Dict[str, Any]]:
-        """
-        Generate ZK proof for timestamp verification.
-        
-        Args:
-            context_data: Context data containing timestamp
-            
-        Returns:
-            ZK proof data or None if generation failed
-        """
-        try:
-            inputs = {
+                "user_id": context_data.user_id,
+            }),
+            ("timestamp", "timestamp_verifier", {
                 "timestamp": context_data.timestamp,
-                "user_id": context_data.user_id
-            }
-            
-            proof = self.zk_runner.generate_proof("timestamp_verifier", inputs)
-            return proof
-        except Exception as e:
-            self.logger.warning(f"Timestamp verification failed: {str(e)}")
-            return None
-    
-    def _verify_location(self, context_data: ContextData) -> Optional[Dict[str, Any]]:
-        """
-        Generate ZK proof for location verification.
-        
-        Args:
-            context_data: Context data containing location information
-            
-        Returns:
-            ZK proof data or None if generation failed
-        """
-        try:
-            inputs = {
+                "user_id": context_data.user_id,
+            }),
+        ]
+        if context_data.location_data:
+            checks.append(("location", "location_chain", {
                 "ip_address": context_data.ip_address,
-                "location_data": context_data.location_data or {},
-                "user_id": context_data.user_id
-            }
-            
-            proof = self.zk_runner.generate_proof("location_chain", inputs)
-            return proof
-        except Exception as e:
-            self.logger.warning(f"Location verification failed: {str(e)}")
-            return None
-    
-    def _verify_access_patterns(self, context_data: ContextData) -> Optional[Dict[str, Any]]:
-        """
-        Generate ZK proof for access pattern verification.
-        
-        Args:
-            context_data: Context data containing access patterns
-            
-        Returns:
-            ZK proof data or None if generation failed
-        """
-        try:
-            inputs = {
-                "access_patterns": context_data.access_patterns or [],
-                "user_id": context_data.user_id
-            }
-            
-            proof = self.zk_runner.generate_proof("pattern_match", inputs)
-            return proof
-        except Exception as e:
-            self.logger.warning(f"Access pattern verification failed: {str(e)}")
-            return None
+                "location_data": context_data.location_data,
+                "user_id": context_data.user_id,
+            }))
+        if context_data.access_patterns:
+            checks.append(("access_patterns", "pattern_match", {
+                "access_patterns": context_data.access_patterns,
+                "user_id": context_data.user_id,
+            }))
+
+        for component, circuit_name, inputs in checks:
+            proof = self.proof_backend.generate_proof(circuit_name, inputs)
+            zk_proofs.append(proof)
+            if self.proof_backend.verify_proof(proof):
+                verified_components.append(component)
+
+        all_verified = len(verified_components) == len(checks)
+        confidence_score = min(len(verified_components) / 4.0, 1.0) if checks else 0.0
+        if not all_verified:
+            confidence_score *= 0.5
+
+        result = VerificationResult(
+            request_id=request_id,
+            verified=all_verified,
+            confidence_score=confidence_score,
+            verified_components=verified_components,
+            timestamp=datetime.now(),
+            zk_proof_data={
+                "proof_system": self.proof_backend.proof_system,
+                "proofs": zk_proofs,
+                "verification_results": [
+                    self.proof_backend.verify_proof(proof) for proof in zk_proofs
+                ],
+                "note": "Deterministic local proof envelope; configure Circom/snarkjs for Groth16 ZK proofs.",
+            },
+        )
+        self.store.save(result)
+        self.logger.info("Context verification completed for request %s: %s", request_id, result.verified)
+        return result
+
+    def get_verification(self, request_id: str) -> Optional[VerificationResult]:
+        return self.store.get(request_id)
 
 
-# Global context verifier instance
+ContextVerificationService = ContextVerifier
+
 _context_verifier = None
 
 
 def get_context_verifier() -> ContextVerifier:
-    """Get the global context verifier instance"""
+    """Get the global context verifier instance."""
     global _context_verifier
     if _context_verifier is None:
         _context_verifier = ContextVerifier()
@@ -449,6 +236,6 @@ def get_context_verifier() -> ContextVerifier:
 
 
 def verify_context_data(context_data: ContextData) -> VerificationResult:
-    """Convenience function to verify context data"""
+    """Convenience function to verify context data."""
     verifier = get_context_verifier()
     return verifier.verify_context(context_data)

@@ -3,58 +3,20 @@ Encryptor Service for ReliQuary API.
 This service provides encryption and decryption functionality via Rust FFI wrappers.
 """
 
-import json
 import logging
 import base64
-from typing import Dict, Any, Optional, Tuple, List
+from typing import List
 from dataclasses import dataclass
 from datetime import datetime
 
-# Import crypto components
-try:
-    from core.crypto.rust_ffi_wrappers import (
-        encrypt_data as rust_encrypt,
-        decrypt_data as rust_decrypt,
-        generate_keypair,
-        sign_message,
-        verify_signature
-    )
-    from core.crypto.key_sharding import KeyShardManager
-except ImportError:
-    # Mock implementations for development
-    def rust_encrypt(data: bytes, key: bytes) -> Tuple[bytes, bytes]:
-        # Simple mock encryption (XOR with key for demo purposes only)
-        encrypted = bytes([b ^ key[i % len(key)] for i, b in enumerate(data)])
-        nonce = b"mock_nonce_123456"
-        return encrypted, nonce
-    
-    def rust_decrypt(encrypted_data: bytes, key: bytes, nonce: bytes) -> bytes:
-        # Simple mock decryption (XOR with key for demo purposes only)
-        return bytes([b ^ key[i % len(key)] for i, b in enumerate(encrypted_data)])
-    
-    def generate_keypair(algorithm: str = "kyber") -> Tuple[bytes, bytes]:
-        # Mock keypair generation
-        private_key = b"mock_private_key_" + algorithm.encode()
-        public_key = b"mock_public_key_" + algorithm.encode()
-        return private_key, public_key
-    
-    def sign_message(message: bytes, private_key: bytes, algorithm: str = "falcon") -> bytes:
-        # Mock signature generation
-        return b"mock_signature_" + message[:10]
-    
-    def verify_signature(message: bytes, signature: bytes, public_key: bytes, algorithm: str = "falcon") -> bool:
-        # Mock signature verification
-        return True
-    
-    class KeyShardManager:
-        def __init__(self):
-            pass
-        
-        def shard_key(self, key: bytes, num_shards: int = 3, threshold: int = 2) -> List[bytes]:
-            return [b"shard_" + str(i).encode() for i in range(num_shards)]
-        
-        def reconstruct_key(self, shards: List[bytes], threshold: int = 2) -> bytes:
-            return b"reconstructed_key"
+from core.crypto.rust_ffi_wrappers import (
+    decrypt_data as rust_decrypt,
+    encrypt_data as rust_encrypt,
+    generate_keypair,
+    sign_message,
+    verify_signature,
+)
+from core.crypto.key_sharding import KeyShardManager
 
 
 @dataclass

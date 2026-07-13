@@ -33,11 +33,32 @@ def _load_agent_components():
     except ImportError:
         class DecisionOrchestrator:
             async def make_decision(self, context: Dict[str, Any], user_id: str, resource_path: str) -> Dict[str, Any]:
+                context_data = context.get("context_data", {})
+                trust_score = float(context_data.get("trust_score", context_data.get("confidence_score", 0.0)))
+                device_verified = bool(context_data.get("device_verified", context_data.get("verified", False)))
+                high_risk = context_data.get("risk_level") in {"high", "very_high"}
+                strict_vote = "approved" if trust_score >= 90 and device_verified and not high_risk else "denied"
+                neutral_vote = "approved" if trust_score >= 60 and not high_risk else "denied"
+                permissive_vote = "approved" if trust_score >= 40 else "denied"
+                votes = {
+                    "strict": strict_vote,
+                    "neutral": neutral_vote,
+                    "permissive": permissive_vote,
+                    "watchdog": "denied" if high_risk else neutral_vote,
+                }
+                approvals = sum(1 for vote in votes.values() if vote == "approved")
+                decision = "approved" if approvals >= 3 else "denied"
                 return {
-                    "decision": "approved",
-                    "confidence": 0.95,
+                    "decision": decision,
+                    "confidence": approvals / len(votes),
                     "agents_consulted": ["neutral", "permissive", "strict"],
-                    "reasoning": "Context verified with high confidence",
+                    "detailed_votes": votes,
+                    "risk_assessment": {
+                        "trust_score": trust_score,
+                        "device_verified": device_verified,
+                        "high_risk": high_risk,
+                    },
+                    "reasoning": "Deterministic local quorum evaluated trust, device verification, and risk level.",
                     "timestamp": datetime.now().isoformat()
                 }
 
@@ -107,6 +128,7 @@ class AgentOrchestrator:
             "watchdog": AgentRole.WATCHDOG
         }
         self.agent_graph = AgentGraph(agent_ids, agent_roles)
+        self.consensus_status: Dict[str, Dict[str, Any]] = {}
     
     async def request_consensus(self, request: AgentRequest) -> AgentResponse:
         """
@@ -119,6 +141,12 @@ class AgentOrchestrator:
             Agent response with consensus decision
         """
         start_time = datetime.now()
+        self.consensus_status[request.request_id] = {
+            "request_id": request.request_id,
+            "status": "running",
+            "progress": 10,
+            "timestamp": start_time.isoformat()
+        }
         
         try:
             # Prepare context for decision making
@@ -155,6 +183,13 @@ class AgentOrchestrator:
             )
             
             self.logger.info(f"Agent consensus completed for request {request.request_id}: {response.decision}")
+            self.consensus_status[request.request_id] = {
+                "request_id": request.request_id,
+                "status": "completed" if response.success else "failed",
+                "progress": 100,
+                "decision": response.decision,
+                "timestamp": end_time.isoformat()
+            }
             return response
             
         except Exception as e:
@@ -164,8 +199,7 @@ class AgentOrchestrator:
             end_time = datetime.now()
             consensus_time_ms = (end_time - start_time).total_seconds() * 1000
             
-            # Return a failed response
-            return AgentResponse(
+            response = AgentResponse(
                 request_id=request.request_id,
                 decision="error",
                 confidence_score=0.0,
@@ -176,6 +210,14 @@ class AgentOrchestrator:
                 timestamp=end_time,
                 success=False
             )
+            self.consensus_status[request.request_id] = {
+                "request_id": request.request_id,
+                "status": "failed",
+                "progress": 100,
+                "decision": "error",
+                "timestamp": end_time.isoformat()
+            }
+            return response
     
     async def get_consensus_status(self, request_id: str) -> Dict[str, Any]:
         """
@@ -187,14 +229,15 @@ class AgentOrchestrator:
         Returns:
             Status information for the request
         """
-        # In a real implementation, this would check the status of an ongoing consensus
-        # For now, we'll return a mock status
-        return {
-            "request_id": request_id,
-            "status": "completed",
-            "progress": 100,
-            "timestamp": datetime.now().isoformat()
-        }
+        return self.consensus_status.get(
+            request_id,
+            {
+                "request_id": request_id,
+                "status": "not_found",
+                "progress": 0,
+                "timestamp": datetime.now().isoformat()
+            }
+        )
     
     async def cancel_consensus(self, request_id: str) -> bool:
         """
@@ -206,9 +249,15 @@ class AgentOrchestrator:
         Returns:
             True if cancellation was successful, False otherwise
         """
-        # In a real implementation, this would cancel an ongoing consensus
-        # For now, we'll just log and return success
-        self.logger.info(f"Canceling consensus request {request_id}")
+        status = self.consensus_status.get(request_id)
+        if not status or status.get("status") != "running":
+            return False
+        status.update({
+            "status": "cancelled",
+            "progress": 100,
+            "timestamp": datetime.now().isoformat()
+        })
+        self.logger.info(f"Canceled consensus request {request_id}")
         return True
 
 

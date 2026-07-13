@@ -285,6 +285,12 @@ async def detailed_health_check() -> Dict[str, Any]:
         zk_status = "degraded"
         zk_info = {"error": str(e)}
     
+    try:
+        from core.crypto.rust_ffi_wrappers import get_crypto_backend_info
+        crypto_info = get_crypto_backend_info()
+    except Exception as e:
+        crypto_info = {"status": "error", "error": str(e)}
+
     health_data = {
         "status": "healthy" if (logger_status == "healthy" and auth_status == "healthy" and zk_status == "healthy") else "degraded",
         "timestamp": datetime.now().isoformat(),
@@ -305,11 +311,11 @@ async def detailed_health_check() -> Dict[str, Any]:
             },
             "crypto": {
                 "status": "available",
-                "note": "Post-quantum cryptography active"
+                **crypto_info
             },
             "storage": {
                 "status": "available",
-                "backend": "local"
+                "backend": os.environ.get("RELIQUARY_STORAGE_BACKEND", "local")
             }
         }
     }
