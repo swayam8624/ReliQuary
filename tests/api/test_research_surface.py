@@ -17,6 +17,7 @@ def test_research_api_surface_is_exposed():
         "/access/events",
         "/memory/index/local-folder",
         "/memory/query",
+        "/share/create",
         "/agents/register",
         "/agents/decision",
         "/audit/",
@@ -36,6 +37,6 @@ def test_root_describes_research_system():
     body = response.json()
     assert body["service"] == "reliquary-api"
     assert "research_surfaces" in body
-    assert {"vaults", "context", "trust", "access", "memory", "agents", "audit", "auth"}.issubset(
+    assert {"vaults", "context", "trust", "access", "memory", "share", "agents", "audit", "auth"}.issubset(
         body["research_surfaces"]
     )

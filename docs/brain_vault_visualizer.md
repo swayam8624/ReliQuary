@@ -28,18 +28,36 @@ Sensitivity thresholds:
 - `secret`: 90
 - `sealed`: never directly reveals values
 
-## Vulkan Visualizer
+## One GUI
 
-On macOS this uses Vulkan through MoltenVK. Install the Vulkan SDK first, then:
+Run the full local product surface with one command:
+
+```bash
+./scripts/run_brain_vault.sh
+```
+
+That starts the local API, builds the Vulkan/ImGui client if needed, and opens
+the Brain Vault window.
+
+## Vulkan ImGui Visualizer
+
+On macOS this uses Vulkan through MoltenVK. Manual build:
 
 ```bash
 ./scripts/build_vulkan_visualizer.sh
 visualizer/vulkan/build/reliquary_vulkan_visualizer
 ```
 
-The current executable creates a real Vulkan instance and replays access events
-as a terminal-rendered brain-vault graph. The next graphics step is a swapchain,
-graph node renderer, and ImGui side panel that subscribes to `/access/stream`.
+The executable now owns a real Vulkan swapchain and Dear ImGui UI. It includes:
+
+- API URL configuration.
+- Vault creation.
+- Text secret storage.
+- File/folder secret storage.
+- Per-secret password field.
+- Share-link creation.
+- Trust-gated graph nodes for storage, gate, and answer.
+- Chat-style command panel that routes intent to the correct control surface.
 
 ## Permissioned Local Memory
 
@@ -59,3 +77,21 @@ curl -s -X POST http://localhost:8000/memory/index/local-folder \
 
 Queries are policy-gated. A trusted local owner can receive paths; a low-trust
 remote caller receives redacted or denied results.
+
+## Share Links
+
+Share links are expiring token links with optional share password and max-view
+limits:
+
+```bash
+curl -s -X POST http://localhost:8000/share/create \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "vault_id": "replace-with-vault-id",
+    "secret_name": "recovery-file",
+    "created_by": "alice",
+    "ttl_minutes": 60,
+    "max_views": 1,
+    "share_password": "share-pass"
+  }'
+```

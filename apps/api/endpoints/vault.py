@@ -6,8 +6,12 @@ This module provides API endpoints for vault management operations.
 import json
 import logging
 import os
+import base64
+import tarfile
+import tempfile
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, Field
@@ -128,6 +132,15 @@ class VaultResponse(BaseModel):
 class SecretCreate(BaseModel):
     secret_name: str = Field(..., min_length=1, max_length=100)
     secret_value: str = Field(..., min_length=1)
+    metadata: Optional[Dict[str, Any]] = None
+    access_password: Optional[str] = Field(default=None, min_length=8, max_length=512)
+
+
+class FileSecretCreate(BaseModel):
+    secret_name: str = Field(..., min_length=1, max_length=100)
+    path: str = Field(..., min_length=1)
+    sensitivity: str = Field(default="secret", max_length=40)
+    access_password: Optional[str] = Field(default=None, min_length=8, max_length=512)
     metadata: Optional[Dict[str, Any]] = None
 
 
@@ -364,7 +377,8 @@ async def store_secret(secret_data: SecretCreate, vault_id: str, vault_manager: 
             vault_id=vault_id,
             secret_name=secret_data.secret_name,
             secret_value=secret_data.secret_value,
-            metadata=secret_data.metadata
+            metadata=secret_data.metadata,
+            access_password=secret_data.access_password,
         )
         
         return SecretResponse(
@@ -396,7 +410,12 @@ async def store_secret(secret_data: SecretCreate, vault_id: str, vault_manager: 
 
 
 @router.get("/secrets/{secret_name}", response_model=SecretResponse)
-async def retrieve_secret(vault_id: str, secret_name: str, vault_manager: VaultManager = Depends(get_vault_manager)):
+async def retrieve_secret(
+    vault_id: str,
+    secret_name: str,
+    access_password: Optional[str] = None,
+    vault_manager: VaultManager = Depends(get_vault_manager),
+):
     """
     Retrieve a secret from a vault.
     
@@ -409,7 +428,7 @@ async def retrieve_secret(vault_id: str, secret_name: str, vault_manager: VaultM
         Retrieved secret information
     """
     try:
-        secret = vault_manager.retrieve_secret(vault_id, secret_name)
+        secret = vault_manager.retrieve_secret(vault_id, secret_name, access_password=access_password)
         
         return SecretResponse(
             secret_id=secret.secret_id,
@@ -437,3 +456,70 @@ async def retrieve_secret(vault_id: str, secret_name: str, vault_manager: VaultM
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve secret: {str(e)}"
         )
+
+
+def _file_payload(path: Path) -> tuple[str, Dict[str, Any]]:
+    data = path.read_bytes()
+    return base64.b64encode(data).decode("ascii"), {
+        "secret_kind": "file",
+        "original_path": str(path),
+        "file_name": path.name,
+        "size_bytes": len(data),
+        "encoding": "base64",
+    }
+
+
+def _folder_payload(path: Path) -> tuple[str, Dict[str, Any]]:
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz") as temp:
+        with tarfile.open(temp.name, "w:gz") as archive:
+            archive.add(path, arcname=path.name)
+        data = Path(temp.name).read_bytes()
+    return base64.b64encode(data).decode("ascii"), {
+        "secret_kind": "folder",
+        "original_path": str(path),
+        "folder_name": path.name,
+        "archive_format": "tar.gz",
+        "size_bytes": len(data),
+        "encoding": "base64",
+    }
+
+
+@router.post("/secrets/file", response_model=SecretResponse, status_code=status.HTTP_201_CREATED)
+async def store_file_or_folder_secret(
+    file_data: FileSecretCreate,
+    vault_id: str,
+    vault_manager: VaultManager = Depends(get_vault_manager),
+):
+    """Store any local file or folder as an encrypted secret payload."""
+    path = Path(file_data.path).expanduser().resolve()
+    if not path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Path not found")
+
+    try:
+        if path.is_dir():
+            value, payload_metadata = _folder_payload(path)
+        else:
+            value, payload_metadata = _file_payload(path)
+        metadata = {
+            **payload_metadata,
+            **(file_data.metadata or {}),
+            "sensitivity": file_data.sensitivity,
+        }
+        secret = vault_manager.store_secret(
+            vault_id=vault_id,
+            secret_name=file_data.secret_name,
+            secret_value=value,
+            metadata=metadata,
+            access_password=file_data.access_password,
+        )
+        return SecretResponse(
+            secret_id=secret.secret_id,
+            vault_id=secret.vault_id,
+            secret_name=secret.secret_name,
+            metadata=secret.metadata,
+            created_at=datetime.fromisoformat(secret.created_at),
+            updated_at=datetime.fromisoformat(secret.updated_at),
+            version=secret.version,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

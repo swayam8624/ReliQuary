@@ -69,7 +69,7 @@ scripts/doctor_verbose.sh
 For a native GUI on macOS:
 
 ```bash
-scripts/run_mac_gui.sh
+scripts/run_brain_vault.sh
 ```
 
 Run the local in-process research flow without starting a server:
@@ -293,10 +293,15 @@ scripts/build_vulkan_visualizer.sh
 visualizer/vulkan/build/reliquary_vulkan_visualizer
 ```
 
-The current visualizer creates a real Vulkan instance and replays trust-gate
-events as a brain-vault graph. It is intentionally separate from the API so it
-can mature into a GLFW/ImGui graph renderer without destabilizing backend
-verification.
+The current visualizer is a real Vulkan swapchain with Dear ImGui controls for
+API configuration, vaults, text secrets, file/folder secrets, specific secret
+passwords, share links, a trust-gate graph, and a chat-style command panel.
+
+Run the full local console:
+
+```bash
+scripts/run_brain_vault.sh
+```
 
 ## Website
 

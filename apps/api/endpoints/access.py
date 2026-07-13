@@ -45,6 +45,7 @@ class AccessEvaluateRequest(BaseModel):
     trust_score: int = Field(default=50, ge=0, le=100)
     subject: AccessSubjectRequest
     metadata: Optional[Dict[str, Any]] = None
+    access_password: Optional[str] = Field(default=None, min_length=8, max_length=512)
 
 
 class AccessDecisionResponse(BaseModel):
@@ -136,9 +137,15 @@ async def request_secret(
     revealed_metadata = {"resource_name": request.resource_name, "resource_type": request.resource_type}
     if record.decision == "allow":
         try:
-            secret = vault_manager.retrieve_secret(request.vault_id, request.resource_name)
+            secret = vault_manager.retrieve_secret(
+                request.vault_id,
+                request.resource_name,
+                access_password=request.access_password,
+            )
         except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+            detail = str(exc)
+            status_code = status.HTTP_403_FORBIDDEN if "password" in detail.lower() else status.HTTP_404_NOT_FOUND
+            raise HTTPException(status_code=status_code, detail=detail) from exc
         revealed_value = secret.secret_value
         revealed_metadata.update(secret.metadata or {})
     elif record.decision == "redact":

@@ -76,26 +76,52 @@ class VaultManager:
         seed = os.environ.get("RELIQUARY_DEV_SECRET_KEY", "reliquary-local-dev-secret-key")
         return hashlib.sha256(seed.encode("utf-8")).digest()
 
-    def _encrypt_secret_value(self, secret_value: str) -> str:
-        ciphertext, nonce, tag = encrypt(secret_value.encode("utf-8"), self._secret_encryption_key())
+    def _password_secret_key(self, access_password: str, salt_b64: str) -> bytes:
+        return hashlib.pbkdf2_hmac(
+            "sha256",
+            access_password.encode("utf-8"),
+            base64.b64decode(salt_b64),
+            250_000,
+            dklen=32,
+        )
+
+    def _encrypt_secret_value(self, secret_value: str, access_password: Optional[str] = None) -> str:
+        salt_b64 = None
+        key = self._secret_encryption_key()
+        kdf = "vault"
+        if access_password:
+            salt_b64 = base64.b64encode(os.urandom(16)).decode("ascii")
+            key = self._password_secret_key(access_password, salt_b64)
+            kdf = "password-pbkdf2-sha256"
+
+        ciphertext, nonce, tag = encrypt(secret_value.encode("utf-8"), key)
         envelope = {
             "ciphertext": base64.b64encode(ciphertext).decode("ascii"),
             "nonce": base64.b64encode(nonce).decode("ascii"),
             "tag": base64.b64encode(tag).decode("ascii"),
+            "kdf": kdf,
         }
+        if salt_b64:
+            envelope["salt"] = salt_b64
         return SECRET_ENVELOPE_PREFIX + base64.b64encode(
             json.dumps(envelope, separators=(",", ":")).encode("utf-8")
         ).decode("ascii")
 
-    def _decrypt_secret_value(self, stored_value: str) -> str:
+    def _decrypt_secret_value(self, stored_value: str, access_password: Optional[str] = None) -> str:
         if stored_value.startswith(SECRET_ENVELOPE_PREFIX):
             encoded = stored_value[len(SECRET_ENVELOPE_PREFIX):]
             envelope = json.loads(base64.b64decode(encoded).decode("utf-8"))
+            if envelope.get("kdf") == "password-pbkdf2-sha256":
+                if not access_password:
+                    raise ValueError("Secret requires its specific access password")
+                key = self._password_secret_key(access_password, envelope["salt"])
+            else:
+                key = self._secret_encryption_key()
             plaintext = decrypt(
                 base64.b64decode(envelope["ciphertext"]),
                 base64.b64decode(envelope["nonce"]),
                 base64.b64decode(envelope["tag"]),
-                self._secret_encryption_key(),
+                key,
             )
             return plaintext.decode("utf-8")
 
@@ -276,8 +302,8 @@ class VaultManager:
         self.storage.delete_vault(vault_id)
         return True
 
-    def store_secret(self, vault_id: str, secret_name: str, secret_value: str, 
-                     metadata: Dict[str, Any] = None) -> 'Secret':
+    def store_secret(self, vault_id: str, secret_name: str, secret_value: str,
+                     metadata: Dict[str, Any] = None, access_password: Optional[str] = None) -> 'Secret':
         """
         Store a secret in a vault.
         
@@ -295,12 +321,15 @@ class VaultManager:
 
         secret_id = str(uuid.uuid4())
         now = datetime.now().isoformat()
+        secret_metadata = metadata or {}
+        if access_password:
+            secret_metadata = {**secret_metadata, "password_required": True}
         secret_data = {
             "secret_id": secret_id,
             "vault_id": vault_id,
             "secret_name": secret_name,
-            "secret_value": self._encrypt_secret_value(secret_value),
-            "metadata": metadata or {},
+            "secret_value": self._encrypt_secret_value(secret_value, access_password=access_password),
+            "metadata": secret_metadata,
             "created_at": now,
             "updated_at": now,
             "version": 1
@@ -312,7 +341,7 @@ class VaultManager:
             pass
         return Secret(**secret_data)
 
-    def retrieve_secret(self, vault_id: str, secret_name: str) -> 'Secret':
+    def retrieve_secret(self, vault_id: str, secret_name: str, access_password: Optional[str] = None) -> 'Secret':
         """
         Retrieve a secret from a vault.
         
@@ -326,7 +355,10 @@ class VaultManager:
         try:
             secret_bytes = self.storage.load_secret(vault_id, secret_name)
             secret_copy = json.loads(secret_bytes)
-            secret_copy["secret_value"] = self._decrypt_secret_value(secret_copy["secret_value"])
+            secret_copy["secret_value"] = self._decrypt_secret_value(
+                secret_copy["secret_value"],
+                access_password=access_password,
+            )
             return Secret(**secret_copy)
         except NotImplementedError:
             pass
@@ -336,7 +368,10 @@ class VaultManager:
         for secret in self.secrets.values():
             if secret["vault_id"] == vault_id and secret["secret_name"] == secret_name:
                 secret_copy = secret.copy()
-                secret_copy["secret_value"] = self._decrypt_secret_value(secret_copy["secret_value"])
+                secret_copy["secret_value"] = self._decrypt_secret_value(
+                    secret_copy["secret_value"],
+                    access_password=access_password,
+                )
                 return Secret(**secret_copy)
         raise ValueError("Secret not found")
 

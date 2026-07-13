@@ -74,6 +74,7 @@ run_step "Run focused pytest matrix" pytest -q \
   tests/test_crypto.py \
   tests/api/test_access_decision.py \
   tests/api/test_memory_retrieval.py \
+  tests/api/test_secret_payloads_and_share.py \
   tests/api/test_vault_access.py \
   tests/api/test_research_surface.py \
   tests/test_vault_storage_persistence.py \
@@ -87,6 +88,13 @@ if [ "$RUN_WEBSITE" -eq 1 ] && command -v npm >/dev/null 2>&1; then
 else
   section "Website build"
   echo "Skipped."
+fi
+
+if command -v cmake >/dev/null 2>&1 && command -v vulkaninfo >/dev/null 2>&1; then
+  run_step "Build Vulkan ImGui Brain Vault" scripts/build_vulkan_visualizer.sh
+else
+  section "Build Vulkan ImGui Brain Vault"
+  echo "Skipped because cmake or Vulkan SDK tools are unavailable."
 fi
 
 if [ "$RUN_CONTAINER" -eq 1 ]; then
@@ -117,6 +125,9 @@ S3-compatible bucket:
   RELIQUARY_S3_PREFIX=reliquary
   RELIQUARY_S3_ENDPOINT_URL=https://optional-compatible-endpoint
 INFO
+
+section "Main GUI"
+echo "Run ./scripts/run_brain_vault.sh for the single Vulkan/ImGui console."
 
 section "Done"
 echo "Doctor finished successfully. Full log: $LOG_FILE"
