@@ -23,7 +23,8 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -156,13 +157,123 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: white;
   color: var(--ink);
   padding: 11px 12px;
+}
+
+.brain {
+  min-height: 190px;
+  display: grid;
+  grid-template-columns: 1fr 80px 1fr 80px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #11161d;
+  color: white;
+}
+
+.node {
+  min-height: 118px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.node span {
+  color: #c9ced6;
+  font-size: 13px;
+}
+
+.node.gate {
+  border-color: #6a7080;
+}
+
+.node.gate.allow,
+.decisionCard.allow {
+  border-color: #0b6e4f;
+  box-shadow: inset 0 0 0 2px rgba(11, 110, 79, 0.18);
+}
+
+.node.gate.redact,
+.decisionCard.redact {
+  border-color: #aa5f00;
+  box-shadow: inset 0 0 0 2px rgba(170, 95, 0, 0.18);
+}
+
+.node.gate.deny,
+.decisionCard.deny {
+  border-color: #9c1f1f;
+  box-shadow: inset 0 0 0 2px rgba(156, 31, 31, 0.18);
+}
+
+.edge {
+  height: 3px;
+  background: linear-gradient(90deg, #4f5867, #d8d5c9, #4f5867);
+}
+
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.checks label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.checks input {
+  width: auto;
+}
+
+.decisionCard {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 18px;
+}
+
+.decisionCard strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 34px;
+  letter-spacing: 0;
+}
+
+.decisionCard.allow strong {
+  color: var(--accent);
+}
+
+.decisionCard.redact strong {
+  color: var(--warning);
+}
+
+.decisionCard.deny strong {
+  color: var(--error);
+}
+
+.decisionCard ul {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.6;
 }
 
 textarea {
@@ -231,7 +342,14 @@ pre {
 
   .grid,
   .storage,
+  .brain,
   .topbar {
     grid-template-columns: 1fr;
+  }
+
+  .edge {
+    width: 3px;
+    height: 34px;
+    justify-self: center;
   }
 }

@@ -17,6 +17,7 @@ from vaults.manager import VaultManager
 from vaults.storage.local import LocalStorage
 from vaults.storage.postgres import PostgresStorage
 from vaults.storage.s3 import S3Storage
+from apps.api.services.access_decision import AccessDecisionEngine, AccessResource, AccessSubject
 
 
 class ReliQuaryApp(tk.Tk):
@@ -26,6 +27,7 @@ class ReliQuaryApp(tk.Tk):
         self.geometry("1040x720")
         self.minsize(900, 620)
         self.manager: VaultManager | None = None
+        self.access_engine = AccessDecisionEngine()
         self.current_vault_id = tk.StringVar()
         self.storage_mode = tk.StringVar(value="Local Mac folder")
         self.local_path = tk.StringVar(value=str(Path.home() / "ReliQuary Vaults"))
@@ -56,6 +58,7 @@ class ReliQuaryApp(tk.Tk):
         self._storage_panel(left)
         self._vault_panel(left)
         self._secret_panel(right)
+        self._access_panel(right)
         self._log_panel(right)
 
     def _storage_panel(self, parent: ttk.Frame) -> None:
@@ -121,6 +124,40 @@ class ReliQuaryApp(tk.Tk):
         actions.pack(fill=tk.X)
         ttk.Button(actions, text="Store Secret", command=self.store_secret).pack(side=tk.LEFT, fill=tk.X, expand=True)
         ttk.Button(actions, text="Retrieve Secret", command=self.retrieve_secret).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(8, 0))
+
+    def _access_panel(self, parent: ttk.Frame) -> None:
+        frame = ttk.LabelFrame(parent, text="Trust gate", padding=12)
+        frame.pack(fill=tk.X, pady=(14, 0))
+        self.access_user = tk.StringVar(value="local-user")
+        self.access_trust = tk.IntVar(value=95)
+        self.access_sensitivity = tk.StringVar(value="secret")
+        self.access_remote = tk.StringVar(value="127.0.0.1")
+        self.device_verified = tk.BooleanVar(value=True)
+        self.local_session = tk.BooleanVar(value=True)
+        self.biometric_verified = tk.BooleanVar(value=True)
+        ttk.Label(frame, text="Requesting user").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(frame, text="Trust score").grid(row=0, column=1, sticky=tk.W, padx=(8, 0))
+        ttk.Entry(frame, textvariable=self.access_user).grid(row=1, column=0, sticky=tk.EW)
+        ttk.Spinbox(frame, from_=0, to=100, textvariable=self.access_trust).grid(row=1, column=1, sticky=tk.EW, padx=(8, 0))
+        ttk.Label(frame, text="Sensitivity").grid(row=2, column=0, sticky=tk.W, pady=(8, 0))
+        ttk.Label(frame, text="Remote address").grid(row=2, column=1, sticky=tk.W, padx=(8, 0), pady=(8, 0))
+        ttk.Combobox(
+            frame,
+            textvariable=self.access_sensitivity,
+            values=["public", "private", "sensitive", "secret", "sealed"],
+            state="readonly",
+        ).grid(row=3, column=0, sticky=tk.EW)
+        ttk.Entry(frame, textvariable=self.access_remote).grid(row=3, column=1, sticky=tk.EW, padx=(8, 0))
+        checks = ttk.Frame(frame)
+        checks.grid(row=4, column=0, columnspan=2, sticky=tk.EW, pady=(10, 0))
+        ttk.Checkbutton(checks, text="Device", variable=self.device_verified).pack(side=tk.LEFT)
+        ttk.Checkbutton(checks, text="Local", variable=self.local_session).pack(side=tk.LEFT, padx=(12, 0))
+        ttk.Checkbutton(checks, text="Biometric", variable=self.biometric_verified).pack(side=tk.LEFT, padx=(12, 0))
+        ttk.Button(frame, text="Evaluate Trust Gate", command=self.evaluate_access).grid(row=5, column=0, columnspan=2, sticky=tk.EW, pady=(10, 0))
+        self.decision_badge = tk.Label(frame, text="NO DECISION", bg="#626771", fg="white", padx=12, pady=8)
+        self.decision_badge.grid(row=6, column=0, columnspan=2, sticky=tk.EW)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
 
     def _log_panel(self, parent: ttk.Frame) -> None:
         frame = ttk.LabelFrame(parent, text="Result log", padding=12)
@@ -212,6 +249,37 @@ class ReliQuaryApp(tk.Tk):
                 self.secret_name.get().strip(),
             )
             self.after(0, lambda: self.log(f"Retrieved {secret.secret_name}: {secret.secret_value}"))
+
+        self.run_task(task)
+
+    def evaluate_access(self) -> None:
+        def task() -> None:
+            manager = self.require_manager()
+            vault = manager.get_vault(self.current_vault_id.get().strip())
+            if not vault:
+                raise RuntimeError("Create or enter a vault ID first.")
+            record = self.access_engine.evaluate(
+                subject=AccessSubject(
+                    user_id=self.access_user.get().strip(),
+                    device_verified=self.device_verified.get(),
+                    local_session=self.local_session.get(),
+                    biometric_verified=self.biometric_verified.get(),
+                    remote_address=self.access_remote.get().strip(),
+                    user_agent="reliquary-mac-gui",
+                ),
+                resource=AccessResource(
+                    vault_id=vault.vault_id,
+                    owner_id=vault.owner_id or vault.metadata.owner_did,
+                    name=self.secret_name.get().strip(),
+                    sensitivity=self.access_sensitivity.get(),
+                    resource_type="secret",
+                ),
+                trust_score=self.access_trust.get(),
+            )
+            color = {"allow": "#0b6e4f", "redact": "#aa5f00", "deny": "#9c1f1f"}[record.decision]
+            label = f"{record.decision.upper()} | trust {record.trust_score}/{record.required_score}"
+            self.after(0, lambda: self.decision_badge.configure(text=label, bg=color))
+            self.after(0, lambda: self.log(f"Access {record.decision}: " + "; ".join(record.reasons)))
 
         self.run_task(task)
 

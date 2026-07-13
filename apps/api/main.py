@@ -30,8 +30,10 @@ from auth.auth_middleware import setup_auth_middleware
 
 from zk.zk_endpoints import zk_router
 from apps.api.endpoints.agent import router as agent_router
+from apps.api.endpoints.access import router as access_router
 from apps.api.endpoints.audit import router as audit_router
 from apps.api.endpoints.context import router as context_router
+from apps.api.endpoints.memory import router as memory_router
 from apps.api.endpoints.trust import router as trust_router
 from apps.api.endpoints.vault import router as vault_router
 
@@ -97,6 +99,8 @@ def configure_routes(app: FastAPI) -> FastAPI:
 
     app.include_router(context_router)
     app.include_router(trust_router)
+    app.include_router(access_router)
+    app.include_router(memory_router)
     app.include_router(agent_router)
     app.include_router(audit_router)
     app.include_router(vault_router)
@@ -150,6 +154,8 @@ app.include_router(zk_router)
 # Include research subsystem endpoints
 app.include_router(context_router)
 app.include_router(trust_router)
+app.include_router(access_router)
+app.include_router(memory_router)
 app.include_router(agent_router)
 app.include_router(audit_router)
 app.include_router(vault_router)
@@ -175,6 +181,8 @@ async def root() -> Dict[str, Any]:
             "vaults": ["/vaults/", "/vaults/secrets"],
             "context": ["/context/verify", "/context/zk/generate", "/zk/*"],
             "trust": ["/trust/evaluate", "/trust/profile/{user_id}"],
+            "access": ["/access/evaluate", "/access/request-secret", "/access/events", "/access/stream"],
+            "memory": ["/memory/index/local-folder", "/memory/query"],
             "agents": ["/agents/register", "/agents/decision"],
             "audit": ["/audit/", "/logs/summary"],
             "auth": ["/auth/*"]

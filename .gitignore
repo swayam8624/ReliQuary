@@ -49,6 +49,7 @@ reliquary-env/  # Your Conda environment directory
 # -----------------------------------------------------------------------------
 # Cargo build directory
 target/
+visualizer/vulkan/build/
 
 # Keep Cargo.lock when a Rust crate is promoted to a shipped binary. The
 # current PyO3 crates are library crates, so their lockfiles are not required.

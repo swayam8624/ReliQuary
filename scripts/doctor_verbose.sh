@@ -72,6 +72,8 @@ fi
 run_step "Compile Python import surface" python -m compileall apps auth core vaults agents zk scripts
 run_step "Run focused pytest matrix" pytest -q \
   tests/test_crypto.py \
+  tests/api/test_access_decision.py \
+  tests/api/test_memory_retrieval.py \
   tests/api/test_vault_access.py \
   tests/api/test_research_surface.py \
   tests/test_vault_storage_persistence.py \

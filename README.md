@@ -37,8 +37,13 @@ and proving outputs are intentionally removed from git.
 - FastAPI app at `apps.api.main:app`.
 - Active API routers for auth, ZK, vaults, context, trust, agents, and audit.
 - Local vault creation, listing, secret storage, and retrieval.
+- Trust-gated access decisions that return `allow`, `redact`, or `deny` with
+  required trust scores and audit events.
 - Native Mac GUI for vault creation, local folder storage, Postgres storage, and
-  S3-compatible bucket storage.
+  S3-compatible bucket storage, including a visual trust gate.
+- Browser Brain Vault console that shows whether requested knowledge is
+  revealed, redacted, or denied.
+- Vulkan/MoltenVK visualizer scaffold for the secured brain graph.
 - AES-GCM and Merkle helpers.
 - Rust/PyO3 build path for native crypto modules.
 - Rust-backed Kyber/Falcon tests when the extensions are installed.
@@ -106,6 +111,67 @@ scripts/run_mac_gui.sh
 ```
 
 More detail is in `docs/storage_and_gui.md`.
+
+## Brain Vault Access Decisions
+
+The vault APIs store encrypted records. The access APIs decide what can be
+shown to a requester:
+
+```bash
+curl -s -X POST http://localhost:8000/access/request-secret \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "vault_id": "replace-with-vault-id",
+    "resource_name": "database-password",
+    "sensitivity": "secret",
+    "trust_score": 95,
+    "subject": {
+      "user_id": "alice",
+      "device_verified": true,
+      "local_session": true,
+      "biometric_verified": true,
+      "remote_address": "127.0.0.1"
+    }
+  }'
+```
+
+The same request with a different user, remote address, unverified device, or
+low trust score returns `redact` or `deny` instead of the secret value. Recent
+decisions are exposed at `/access/events` and `/access/stream` for dashboards
+and visualizers.
+
+ReliQuary can also index user-selected local folders as permissioned memory:
+
+```bash
+curl -s -X POST http://localhost:8000/memory/index/local-folder \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "root_path": "/Users/me/Documents",
+    "vault_id": "replace-with-vault-id",
+    "owner_id": "alice",
+    "sensitivity": "sensitive"
+  }'
+```
+
+Then query:
+
+```bash
+curl -s -X POST http://localhost:8000/memory/query \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "query": "passport",
+    "trust_score": 95,
+    "subject": {
+      "user_id": "alice",
+      "device_verified": true,
+      "local_session": true,
+      "biometric_verified": true,
+      "remote_address": "127.0.0.1"
+    }
+  }'
+```
+
+See `docs/brain_vault_visualizer.md`.
 
 ## Local Postgres Vault Storage
 
@@ -217,6 +283,20 @@ That installs:
 
 Without these modules, AES-GCM and Merkle flows have Python fallbacks, but
 Kyber/Falcon operations do not fake post-quantum behavior.
+
+## Vulkan Brain Visualizer
+
+On macOS, Vulkan runs through MoltenVK. Install the Vulkan SDK, then:
+
+```bash
+scripts/build_vulkan_visualizer.sh
+visualizer/vulkan/build/reliquary_vulkan_visualizer
+```
+
+The current visualizer creates a real Vulkan instance and replays trust-gate
+events as a brain-vault graph. It is intentionally separate from the API so it
+can mature into a GLFW/ImGui graph renderer without destabilizing backend
+verification.
 
 ## Website
 
